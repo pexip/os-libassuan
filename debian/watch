@@ -1,0 +1,4 @@
+version=3
+
+opts="pasv,pgpsigurlmangle=s/$/.sig/" \
+  ftp://ftp.gnupg.org/gcrypt/libassuan/libassuan-(.*)\.tar\.bz2

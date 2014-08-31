@@ -1,0 +1,47 @@
+Source: libassuan
+Section: libs
+Priority: optional
+Maintainer: Debian GnuPG-Maintainers <pkg-gnupg-maint@lists.alioth.debian.org>
+Uploaders: Eric Dorland <eric@debian.org>
+Build-Depends: debhelper (>= 9), dh-autoreconf, libgpg-error-dev
+Standards-Version: 3.9.5
+Vcs-Git: git://anonscm.debian.org/pkg-gnupg/libassuan.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnupg/libassuan.git
+Homepage: http://www.gnupg.org/(en)/related_software/libassuan/index.html
+
+Package: libassuan0
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: IPC library for the GnuPG components
+ Libassuan is a small library implementing the so-called "Assuan
+ protocol". This protocol is used for IPC between most newer GnuPG
+ components. Both server and client side functions are provided.
+
+Package: libassuan-dev
+Architecture: any
+Section: libdevel
+Depends: dpkg (>= 1.15.4) | install-info,
+         libassuan0 (= ${binary:Version}),
+         ${misc:Depends}
+Description: IPC library for the GnuPG components -- header files
+ Libassuan is a small library implementing the so-called "Assuan
+ protocol". This protocol is used for IPC between most newer GnuPG
+ components. Both server and client side functions are provided.
+ .
+ This package contains header files and static libraries for libassuan.
+
+Package: libassuan0-dbg
+Architecture: any
+Multi-Arch: same
+Section: debug
+Priority: extra
+Pre-Depends: ${misc:Pre-Depends}
+Depends: libassuan0 (= ${binary:Version}), ${misc:Depends}
+Description: IPC library for the GnuPG components -- debugging symbols
+ Libassuan is a small library implementing the so-called "Assuan
+ protocol". This protocol is used for IPC between most newer GnuPG
+ components. Both server and client side functions are provided.
+ .
+ This package contains debugging symbols for libassuan.
