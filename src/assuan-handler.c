@@ -661,7 +661,7 @@ dispatch_command (assuan_context_t ctx, char *line, int linelen)
   if (!s)
     return PROCESS_DONE (ctx, set_error (ctx, GPG_ERR_ASS_UNKNOWN_CMD, NULL));
   line += shift;
-  linelen -= shift;
+  /* linelen -= shift; -- not needed.  */
 
   if (ctx->pre_cmd_notify_fnc) {
     err = ctx->pre_cmd_notify_fnc(ctx, ctx->cmdtbl[i].name);
@@ -995,7 +995,7 @@ assuan_get_data_fp (assuan_context_t ctx)
 }
 
 
-/* Set the text used for the next OK reponse.  This string is
+/* Set the text used for the next OK response.  This string is
    automatically reset to NULL after the next command. */
 gpg_error_t
 assuan_set_okay_line (assuan_context_t ctx, const char *line)

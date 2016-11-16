@@ -1,3 +1,94 @@
+libassuan (2.4.3-2) unstable; urgency=medium
+
+  * updated debian/watch
+  * wrap-and-sort -ast
+  * bump to debhelper 10
+  * clean up debian/copyright
+  * fix spelling in libassuan-config(1)
+  * clean up lintian overrides
+  * add all hardening rules
+  * avoid self-describing as a beta when build from revision control
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 16 Nov 2016 21:46:56 +0900
+
+libassuan (2.4.3-1) unstable; urgency=medium
+
+  * New upstream release.
+  * bumped standards-version to 3.9.8 (no changes needed)
+  * fix spelling error (thanks, lintian!)
+  * clean up URLs in debian/control
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Fri, 15 Jul 2016 02:00:30 +0200
+ 
+libassuan (2.4.2-3) unstable; urgency=medium
+
+  * add new libassuan-mingw-w64-dev targeting cross-building for Windows
+    platforms.
+  * bumped standards-version to 3.9.7 (no changes needed)
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 16 Feb 2016 17:36:26 -0500
+
+libassuan (2.4.2-2) unstable; urgency=medium
+
+  * debian/control, debian/rules: Drop libassuan0-dbg in favor of -dbgsym
+    package.
+  * debian/control: Standards-Version to 3.9.6.1.
+
+ -- Eric Dorland <eric@debian.org>  Tue, 29 Dec 2015 03:53:12 -0500
+
+libassuan (2.4.2-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/control: Tighten build dependency on libgpg-error-dev.
+
+ -- Eric Dorland <eric@debian.org>  Fri, 04 Dec 2015 13:52:17 -0500
+
+libassuan (2.4.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Eric Dorland <eric@debian.org>  Wed, 02 Dec 2015 01:08:04 -0500
+
+libassuan (2.4.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/libassuan0.symbols: Add new assuan_sock_connect_byname symbol.
+
+ -- Eric Dorland <eric@debian.org>  Thu, 12 Nov 2015 11:03:13 -0500
+
+libassuan (2.3.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * added myself to uploaders
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 08 Sep 2015 01:42:24 -0400
+
+libassuan (2.2.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/gbp.conf: Use upstream-vcs-tag.
+  * debian/copyright: Fix non-unique license.
+
+ -- Eric Dorland <eric@debian.org>  Fri, 22 May 2015 01:32:11 -0400
+
+libassuan (2.2.0-2) unstable; urgency=medium
+
+  * debian/control: Standards version to 3.9.6.
+  * debian/copyright: Update to DEP5 format.
+
+ -- Eric Dorland <eric@debian.org>  Tue, 05 May 2015 17:20:58 -0400
+
+libassuan (2.2.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * debian/libassuan0.symbols: Add new 2.2.0 symbol.
+  *
+    debian/patches/0001-Use-the-debian-changelog-timestamp-for-BUILD_TIMESTA.patch:
+    Patch to use the debian/changelog date for BUILD_TIMESTAMP to make
+    build reproducible.
+
+ -- Eric Dorland <eric@debian.org>  Mon, 16 Feb 2015 19:15:21 -0500
+
 libassuan (2.1.2-2) unstable; urgency=medium
 
   * debian/control: Switch maintainer to Debian GnuPG-Maintainers.

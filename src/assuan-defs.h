@@ -228,7 +228,7 @@ struct assuan_context_s
 static GPG_ERR_INLINE gpg_error_t
 _assuan_error (assuan_context_t ctx, gpg_err_code_t errcode)
 {
-  return gpg_err_make (ctx?ctx->err_source:0, errcode);
+  return gpg_err_make (ctx?ctx->err_source: GPG_ERR_SOURCE_ASSUAN, errcode);
 }
 
 /* Release all resources associated with an engine operation.  */
@@ -346,6 +346,8 @@ int _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
                           struct sockaddr *addr, int addrlen);
 int _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
 		       struct sockaddr *addr, int addrlen);
+int _assuan_sock_set_sockaddr_un (const char *fname, struct sockaddr *addr,
+                                  int *r_redirected);
 int _assuan_sock_get_nonce (assuan_context_t ctx, struct sockaddr *addr,
 			    int addrlen, assuan_sock_nonce_t *nonce);
 int _assuan_sock_check_nonce (assuan_context_t ctx, assuan_fd_t fd,
@@ -392,15 +394,19 @@ int setenv (const char *name, const char *value, int replace);
 #ifndef HAVE_PUTC_UNLOCKED
 int putc_unlocked (int c, FILE *stream);
 #endif
-#ifndef HAVE_VASPRINTF
-int _assuan_vasprintf (char **result, const char *format, va_list args);
-int _assuan_asprintf (char **buf, const char *fmt, ...);
-#define vasprintf _assuan_vasprintf
-#define asprintf  _assuan_asprintf
-#endif
 
 
 #define DIM(v)		     (sizeof(v)/sizeof((v)[0]))
+
+/* To avoid that a compiler optimizes memset calls away, these macros
+   can be used. */
+#define wipememory2(_ptr,_set,_len) do { \
+              volatile char *_vptr=(volatile char *)(_ptr); \
+              size_t _vlen=(_len); \
+              while(_vlen) { *_vptr=(_set); _vptr++; _vlen--; } \
+                  } while(0)
+#define wipememory(_ptr,_len) wipememory2(_ptr,0,_len)
+
 
 #if HAVE_W64_SYSTEM
 # define SOCKET2HANDLE(s) ((void *)(s))

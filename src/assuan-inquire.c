@@ -82,7 +82,7 @@ put_membuf (assuan_context_t ctx,
   if (mb->len + len >= mb->size)
     {
       char *p;
-      
+
       mb->size += len + 1024;
       /* we need to allocate one byte more for get_membuf */
       p = _assuan_realloc (ctx, mb->buf, mb->size + 1);
@@ -132,10 +132,13 @@ free_membuf (assuan_context_t ctx, struct membuf *mb)
  * @r_buffer: Returns an allocated buffer
  * @r_length: Returns the length of this buffer
  * @maxlen: If not 0, the size limit of the inquired data.
- * 
- * A Server may use this to Send an inquire.  r_buffer, r_length and
+ *
+ * A server may use this to send an inquire.  r_buffer, r_length and
  * maxlen may all be NULL/0 to indicate that no real data is expected.
- * 
+ * The returned buffer is guaranteed to have an extra 0-byte after the
+ * length.  Thus it can be used as a string if embedded 0 bytes are
+ * not an issue.
+ *
  * Return value: 0 on success or an ASSUAN error code
  **/
 gpg_error_t
@@ -149,6 +152,11 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
   int linelen;
   int nodataexpected;
 
+  if (r_buffer)
+    *r_buffer = NULL;
+  if (r_length)
+    *r_length = 0;
+
   if (!ctx || !keyword || (10 + strlen (keyword) >= sizeof (cmdbuf)))
     return _assuan_error (ctx, GPG_ERR_ASS_INV_VALUE);
   nodataexpected = !r_buffer && !r_length && !maxlen;
@@ -158,7 +166,7 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
     return _assuan_error (ctx, GPG_ERR_ASS_NOT_A_SERVER);
   if (ctx->in_inquire)
     return _assuan_error (ctx, GPG_ERR_ASS_NESTED_COMMANDS);
-  
+
   ctx->in_inquire = 1;
   if (nodataexpected)
     memset (&mb, 0, sizeof mb); /* avoid compiler warnings */
@@ -172,7 +180,7 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
 
   for (;;)
     {
-      do 
+      do
         {
 	  do
 	    rc = _assuan_read_line (ctx);
@@ -181,7 +189,7 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
             goto out;
           line = (unsigned char *) ctx->inbound.line;
           linelen = ctx->inbound.linelen;
-        }    
+        }
       while (*line == '#' || !linelen);
 
       /* Note: As a convenience for manual testing we allow case
@@ -198,7 +206,7 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
           rc = _assuan_error (ctx, GPG_ERR_ASS_CANCELED);
           goto out;
         }
-      if ((line[0] != 'D' && line[0] != 'd') 
+      if ((line[0] != 'D' && line[0] != 'd')
           || line[1] != ' ' || nodataexpected)
         {
           rc = _assuan_error (ctx, GPG_ERR_ASS_UNEXPECTED_CMD);
@@ -208,6 +216,9 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
         continue;
       line += 2;
       linelen -= 2;
+
+      if (mb.too_large)
+        continue; /* Need to read up the remaining data.  */
 
       p = line;
       while (linelen)
@@ -226,18 +237,18 @@ assuan_inquire (assuan_context_t ctx, const char *keyword,
             }
           line = p;
         }
-      if (mb.too_large)
-        {
-          rc = _assuan_error (ctx, GPG_ERR_ASS_TOO_MUCH_DATA);
-          goto out;
-        }
     }
 
   if (!nodataexpected)
     {
-      *r_buffer = get_membuf (ctx, &mb, r_length);
-      if (!*r_buffer)
-	rc = _assuan_error (ctx, gpg_err_code_from_syserror ());
+      if (mb.too_large)
+        rc = _assuan_error (ctx, GPG_ERR_ASS_TOO_MUCH_DATA);
+      else
+        {
+          *r_buffer = get_membuf (ctx, &mb, r_length);
+          if (!*r_buffer)
+            rc = _assuan_error (ctx, gpg_err_code_from_syserror ());
+        }
     }
 
  out:
@@ -297,12 +308,12 @@ _assuan_inquire_ext_cb (assuan_context_t ctx)
       rc = _assuan_error (ctx, GPG_ERR_ASS_UNEXPECTED_CMD);
       goto out;
     }
-  
+
   if (linelen < 3)
     return 0;
   line += 2;
   linelen -= 2;
-  
+
   p = line;
   while (linelen)
     {
@@ -332,7 +343,7 @@ _assuan_inquire_ext_cb (assuan_context_t ctx)
   {
     size_t buf_len = 0;
     unsigned char *buf = NULL;
-    
+
     if (mb)
       {
 	buf = get_membuf (ctx, mb, &buf_len);
@@ -355,10 +366,9 @@ _assuan_inquire_ext_cb (assuan_context_t ctx)
  * @maxlen: If not 0, the size limit of the inquired data.
  * @cb: A callback handler which is invoked after the operation completed.
  * @cb_data: A user-provided value passed to the callback handler.
- * 
+ *
  * A server may use this to send an inquire.  R_BUFFER, R_LENGTH and
  * MAXLEN may all be NULL/0 to indicate that no real data is expected.
- * When this function returns, 
  *
  * Return value: 0 on success or an ASSUAN error code
  **/
@@ -388,7 +398,7 @@ assuan_inquire_ext (assuan_context_t ctx, const char *keyword, size_t maxlen,
   rc = assuan_write_line (ctx, cmdbuf);
   if (rc)
     {
-      free_membuf (ctx, mb); 
+      free_membuf (ctx, mb);
       free (mb);
       return rc;
     }

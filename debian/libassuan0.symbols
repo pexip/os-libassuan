@@ -80,10 +80,14 @@ libassuan.so.0 libassuan0 #MINVER#
  assuan_sock_check_nonce@LIBASSUAN_1.0 2.0.1
  assuan_sock_close@LIBASSUAN_1.0 2.0.1
  assuan_sock_connect@LIBASSUAN_1.0 2.0.1
+ assuan_sock_connect_byname@LIBASSUAN_1.0 2.4.0
  assuan_sock_deinit@LIBASSUAN_1.0 2.0.1
+ assuan_sock_get_flag@LIBASSUAN_1.0 2.3.0
  assuan_sock_get_nonce@LIBASSUAN_1.0 2.0.1
  assuan_sock_init@LIBASSUAN_1.0 2.0.1
  assuan_sock_new@LIBASSUAN_1.0 2.0.1
+ assuan_sock_set_flag@LIBASSUAN_1.0 2.3.0
+ assuan_sock_set_sockaddr_un@LIBASSUAN_1.0 2.2.0
  assuan_socket_connect@LIBASSUAN_1.0 2.0.1
  assuan_socket_connect_fd@LIBASSUAN_1.0 2.0.2
  assuan_transact@LIBASSUAN_1.0 2.0.1

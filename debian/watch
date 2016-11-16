@@ -1,4 +1,6 @@
-version=3
+version=4
 
-opts="pasv,pgpsigurlmangle=s/$/.sig/" \
-  ftp://ftp.gnupg.org/gcrypt/libassuan/libassuan-(.*)\.tar\.bz2
+opts=pgpsigurlmangle=s/$/.sig/ \
+  https://gnupg.org/download/ \
+  /ftp/gcrypt/@PACKAGE@/@PACKAGE@@ANY_VERSION@@ARCHIVE_EXT@ \
+  debian uupdate

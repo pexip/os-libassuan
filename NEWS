@@ -1,3 +1,98 @@
+Noteworthy changes in version 2.4.3 (2016-07-14) [C7/A7/R3]
+------------------------------------------------
+
+ * Allow socket redirection with assuan_socket_connect.
+
+ * Speedup spawning programs on Linux
+
+ * Fix minor memory leaks
+
+ * Portability fixes for Solaris and AIX.
+
+
+Noteworthy changes in version 2.4.2 (2015-12-02) [C7/A7/R2]
+------------------------------------------------
+
+ * The nPth version of the connect system hook does now wrap the call
+   with npth_unprotec/npth_protect to avoid blocking during a connect.
+
+ * Add feature to assuan_sock_connect_byname to test for SOCKS5
+   availability.
+
+
+Noteworthy changes in version 2.4.1 (2015-11-23) [C7/A7/R1]
+------------------------------------------------
+
+ * In Tor mode fallback to port 9150 if 9050 is not listening.
+
+ * Allow building with older mingw-w64 versions.
+
+
+Noteworthy changes in version 2.4.0 (2015-11-03) [C7/A7/R0]
+------------------------------------------------
+
+ * New flags "socks" and "tor-mode" for assuan_sock_{set,get}_flag.
+
+ * New function assuan_sock_connect_byname.
+
+ * Require at least libgpg-error 1.17.
+
+ * Interface changes relative to the 2.3.0 release:
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ assuan_sock_connect_byname    NEW.
+ ASSUAN_SOCK_TOR               NEW.
+ ASSUAN_SOCK_SOCKS             NEW.
+ assuan_sock_set_flag          EXTENDED.
+ assuan_sock_get_flag          EXTENDED.
+
+
+Noteworthy changes in version 2.3.0 (2015-08-28) [C6/A6/R0]
+------------------------------------------------
+
+ * Now wipes out the memory of the context structure before freeing.
+   The context may have stored sensitive data in its line buffers.
+
+ * Fixed a problem with the data length limit in assuan_inquire.
+
+ * Returns GPG_ERR_SOURCE_ASSUAN with errors from functions w/o a
+   context.
+
+ * Two new functions to tweak the behaviour of the socket wrappers.
+
+ * Experimental code to support Cygwin's local sockets.
+
+ * By default build without a build timestamp.
+
+ * Interface changes relative to the 2.2.1 release:
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ assuan_sock_set_flag     NEW.
+ assuan_sock_get_flag     NEW.
+
+
+Noteworthy changes in version 2.2.1 (2015-05-12) [C5/A5/R1]
+------------------------------------------------
+
+ * Documentation updates.
+
+ * Fixed building for Windows with newer versions of Mingw.
+
+
+Noteworthy changes in version 2.2.0 (2014-12-11) [C5/A5/R0]
+------------------------------------------------
+
+ * Added support for socket redirection.
+
+ * Interface changes relative to the 2.1.3 release:
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ assuan_sock_set_sockaddr_un  NEW.
+
+
+Noteworthy changes in version 2.1.3 (2014-11-07) [C4/A4/R3]
+------------------------------------------------
+
+ * Performance fix for Windows.
+
+
 Noteworthy changes in version 2.1.2 (2014-08-17) [C4/A4/R2]
 ------------------------------------------------
 

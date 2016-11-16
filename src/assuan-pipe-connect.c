@@ -65,13 +65,6 @@
 #endif
 
 
-#ifdef _POSIX_OPEN_MAX
-#define MAX_OPEN_FDS _POSIX_OPEN_MAX
-#else
-#define MAX_OPEN_FDS 20
-#endif
-
-
 /* This should be called to make sure that SIGPIPE gets ignored.  */
 static void
 fix_signals (void)
@@ -354,10 +347,11 @@ socketpair_connect (assuan_context_t ctx,
 	fd_child_list[idx] = child_fds[idx + 1];
     }
 
+  _assuan_free (ctx, child_fds);
+
   /* If this is the server child process, exit early.  */
   if (! name && (*argv)[0] == 's')
     {
-      _assuan_free (ctx, child_fds);
       _assuan_close (ctx, fds[0]);
       return 0;
     }
