@@ -1,3 +1,9 @@
+libassuan (2.1.2-2pexip1) pexip; urgency=medium
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Jul 2018 16:05:16 +0000
+
 libassuan (2.1.2-2) unstable; urgency=medium
 
   * debian/control: Switch maintainer to Debian GnuPG-Maintainers.

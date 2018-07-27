@@ -1,13 +1,15 @@
 Source: libassuan
 Section: libs
 Priority: optional
-Maintainer: Debian GnuPG-Maintainers <pkg-gnupg-maint@lists.alioth.debian.org>
-Uploaders: Eric Dorland <eric@debian.org>
+Maintainer: Pexip AS <packaging@pexip.com>
+XSBC-Pexip-Original-Maintainer: Debian GnuPG-Maintainers <pkg-gnupg-maint@lists.alioth.debian.org>
+XSBC-Pexip-Original-Uploaders: Eric Dorland <eric@debian.org>
 Build-Depends: debhelper (>= 9), dh-autoreconf, libgpg-error-dev
 Standards-Version: 3.9.5
 Vcs-Git: git://anonscm.debian.org/pkg-gnupg/libassuan.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnupg/libassuan.git
 Homepage: http://www.gnupg.org/(en)/related_software/libassuan/index.html
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: libassuan0
 Architecture: any
