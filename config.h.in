@@ -7,6 +7,10 @@
 /* Enable gpg-error's strerror macro under W32CE.  */
 #define GPG_ERR_ENABLE_ERRNO_MACROS 1
 
+/* Provide the es_ macro for estream.  */
+#define GPGRT_ENABLE_ES_MACROS 1
+
+
 
 /* GIT commit id revision used to build this package */
 #undef BUILD_REVISION
@@ -40,13 +44,19 @@
 /* Define to 1 if you have the `funopen' function. */
 #undef HAVE_FUNOPEN
 
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
 /* Define to 1 if you have the `getpeereid' function. */
 #undef HAVE_GETPEEREID
 
 /* Define to 1 if you have the `getpeerucred' function. */
 #undef HAVE_GETPEERUCRED
 
-/* Define to 1 if you have the `inet_pton' function. */
+/* Define to 1 if you have the `getrlimit' function. */
+#undef HAVE_GETRLIMIT
+
+/* Define to 1 if you have `inet_pton'. */
 #undef HAVE_INET_PTON
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -78,6 +88,9 @@
 
 /* Defined if SO_PEERCRED is supported (Linux specific) */
 #undef HAVE_SO_PEERCRED
+
+/* Define to 1 if you have the `stat' function. */
+#undef HAVE_STAT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -121,9 +134,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `vasprintf' function. */
-#undef HAVE_VASPRINTF
-
 /* Defined if we run on WindowsCE */
 #undef HAVE_W32CE_SYSTEM
 
@@ -142,9 +152,6 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of this package */
 #undef PACKAGE

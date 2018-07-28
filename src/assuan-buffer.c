@@ -80,6 +80,15 @@ readline (assuan_context_t ctx, char *buf, size_t buflen,
         {
           if (errno == EINTR)
             continue;
+#ifdef HAVE_W32_SYSTEM
+          if (errno == EPIPE)
+            {
+              /* Under Windows we get EPIPE (actually ECONNRESET)
+                 after termination of the client.  Assume an EOF.  */
+              *r_eof = 1;
+              break; /* allow incomplete lines */
+            }
+#endif /*HAVE_W32_SYSTEM*/
           return -1; /* read error */
         }
       else if (!n)
@@ -467,7 +476,7 @@ _assuan_cookie_write_flush (void *cookie)
  * and may get buffered until a line is full.  To force sending the
  * data out @buffer may be passed as NULL (in which case @length must
  * also be 0); however when used by a client this flush operation does
- * also send the terminating "END" command to terminate the reponse on
+ * also send the terminating "END" command to terminate the response on
  * a INQUIRE response.  However, when assuan_transact() is used, this
  * function takes care of sending END itself.
  *
@@ -515,6 +524,9 @@ assuan_sendfd (assuan_context_t ctx, assuan_fd_t fd)
   return _assuan_error (ctx, GPG_ERR_NOT_IMPLEMENTED);
 #endif
 
+  if (!ctx)
+    return _assuan_error (ctx, GPG_ERR_ASS_INV_VALUE);
+
   if (! ctx->engine.sendfd)
     return set_error (ctx, GPG_ERR_NOT_IMPLEMENTED,
 		      "server does not support sending and receiving "
@@ -525,6 +537,9 @@ assuan_sendfd (assuan_context_t ctx, assuan_fd_t fd)
 gpg_error_t
 assuan_receivefd (assuan_context_t ctx, assuan_fd_t *fd)
 {
+  if (!ctx)
+    return _assuan_error (ctx, GPG_ERR_ASS_INV_VALUE);
+
   if (! ctx->engine.receivefd)
     return set_error (ctx, GPG_ERR_NOT_IMPLEMENTED,
 		      "server does not support sending and receiving "
