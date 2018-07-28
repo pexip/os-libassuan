@@ -9,7 +9,7 @@ Standards-Version: 3.9.5
 Vcs-Git: git://anonscm.debian.org/pkg-gnupg/libassuan.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnupg/libassuan.git
 Homepage: http://www.gnupg.org/(en)/related_software/libassuan/index.html
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: libassuan0
 Architecture: any
