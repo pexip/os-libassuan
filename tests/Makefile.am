@@ -25,6 +25,8 @@ EXTRA_DIST = motd ce-createpipe.c
 BUILT_SOURCES =
 CLEANFILES =
 
+testtools = socks5
+
 TESTS = version pipeconnect
 
 if HAVE_W32CE_SYSTEM
@@ -35,10 +37,10 @@ if USE_DESCRIPTOR_PASSING
 TESTS += fdpassing
 endif
 
-
 AM_CFLAGS = $(GPG_ERROR_CFLAGS)
+AM_LDFLAGS = -no-install
 
 noinst_HEADERS = common.h
-noinst_PROGRAMS = $(TESTS) $(w32cetools)
+noinst_PROGRAMS = $(TESTS) $(w32cetools) $(testtools)
 LDADD = ../src/libassuan.la  $(NETLIBS) $(GPG_ERROR_LIBS)
 

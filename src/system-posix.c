@@ -24,20 +24,25 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
 /* Solaris 8 needs sys/types.h before time.h.  */
 #include <sys/types.h>
 #include <time.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#ifdef HAVE_GETRLIMIT
+# include <sys/time.h>
+# include <sys/resource.h>
+#endif /*HAVE_GETRLIMIT*/
+#if __linux__
+# include <dirent.h>
+#endif /*__linux__ */
+
 
 #include "assuan-defs.h"
 #include "debug.h"
-
-#ifdef _POSIX_OPEN_MAX
-#define MAX_OPEN_FDS _POSIX_OPEN_MAX
-#else
-#define MAX_OPEN_FDS 20
-#endif
 
 
 
@@ -168,6 +173,98 @@ writen (int fd, const char *buffer, size_t length)
 }
 
 
+/* Return the maximum number of currently allowed open file
+ * descriptors.  */
+static int
+get_max_fds (void)
+{
+  int max_fds = -1;
+
+#ifdef HAVE_GETRLIMIT
+  struct rlimit rl;
+
+  /* Under Linux we can figure out the highest used file descriptor by
+   * reading /proc/PID/fd.  This is in the common cases much faster
+   * than for example doing 4096 close calls where almost all of them
+   * will fail.  We use the same code in GnuPG and measured this: On a
+   * system with a limit of 4096 files and only 8 files open with the
+   * highest number being 10, we speedup close_all_fds from 125ms to
+   * 0.4ms including the readdir.
+   *
+   * Another option would be to close the file descriptors as returned
+   * from reading that directory - however then we need to snapshot
+   * that list before starting to close them.  */
+#ifdef __linux__
+  {
+    DIR *dir = NULL;
+    struct dirent *dir_entry;
+    const char *s;
+    int x;
+
+    dir = opendir ("/proc/self/fd");
+    if (dir)
+      {
+        while ((dir_entry = readdir (dir)))
+          {
+            s = dir_entry->d_name;
+            if ( *s < '0' || *s > '9')
+              continue;
+            x = atoi (s);
+            if (x > max_fds)
+              max_fds = x;
+          }
+        closedir (dir);
+      }
+    if (max_fds != -1)
+      return max_fds + 1;
+    }
+#endif /* __linux__ */
+
+# ifdef RLIMIT_NOFILE
+  if (!getrlimit (RLIMIT_NOFILE, &rl))
+    max_fds = rl.rlim_max;
+# endif
+
+# ifdef RLIMIT_OFILE
+  if (max_fds == -1 && !getrlimit (RLIMIT_OFILE, &rl))
+    max_fds = rl.rlim_max;
+
+# endif
+#endif /*HAVE_GETRLIMIT*/
+
+#ifdef _SC_OPEN_MAX
+  if (max_fds == -1)
+    {
+      long int scres = sysconf (_SC_OPEN_MAX);
+      if (scres >= 0)
+        max_fds = scres;
+    }
+#endif
+
+#ifdef _POSIX_OPEN_MAX
+  if (max_fds == -1)
+    max_fds = _POSIX_OPEN_MAX;
+#endif
+
+#ifdef OPEN_MAX
+  if (max_fds == -1)
+    max_fds = OPEN_MAX;
+#endif
+
+  if (max_fds == -1)
+    max_fds = 256;  /* Arbitrary limit.  */
+
+  /* AIX returns INT32_MAX instead of a proper value.  We assume that
+     this is always an error and use a more reasonable limit.  */
+#ifdef INT32_MAX
+  if (max_fds == INT32_MAX)
+    max_fds = 256;
+#endif
+
+  return max_fds;
+}
+
+
 int
 __assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
 		const char **argv,
@@ -246,9 +343,7 @@ __assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
 
       /* Close all files which will not be duped and are not in the
 	 fd_child_list. */
-      n = sysconf (_SC_OPEN_MAX);
-      if (n < 0)
-	n = MAX_OPEN_FDS;
+      n = get_max_fds ();
       for (i = 0; i < n; i++)
 	{
 	  if (i == STDIN_FILENO || i == STDOUT_FILENO || i == STDERR_FILENO)

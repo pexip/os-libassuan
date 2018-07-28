@@ -1,7 +1,7 @@
 # configure.ac - for libassuan
 # Copyright (C) 2001, 2002, 2003, 2006, 2007, 2009,
 #               2011, 2012, 2013 Free Software Foundation, Inc.
-# Copyright (C) 2013, 2014  g10 Code GmbH
+# Copyright (C) 2013, 2014, 2015  g10 Code GmbH
 #
 # This file is part of Assuan.
 #
@@ -20,8 +20,9 @@
 
 # Process this file with autoconf to produce a configure script.
 
+
 AC_PREREQ(2.61)
-min_automake_version="1.10"
+min_automake_version="1.14"
 
 # To build a release you need to create a tag with the version number
 # (git tag -s libassuan-n.m.k) and run "./autogen.sh --force".  Please
@@ -30,8 +31,8 @@ min_automake_version="1.10"
 # for the LT versions.
 m4_define([mym4_package],[libassuan])
 m4_define([mym4_major], [2])
-m4_define([mym4_minor], [1])
-m4_define([mym4_micro], [2])
+m4_define([mym4_minor], [4])
+m4_define([mym4_micro], [3])
 
 # To start a new development series, i.e a new major or minor number
 # you need to mark an arbitrary commit before the first beta release
@@ -58,9 +59,9 @@ AC_INIT([mym4_package],[mym4_version], [http://bugs.gnupg.org])
 #   (Interfaces added:			AGE++)
 #   (Interfaces removed/changed:	AGE=0)
 #
-LIBASSUAN_LT_CURRENT=4
-LIBASSUAN_LT_AGE=4
-LIBASSUAN_LT_REVISION=2
+LIBASSUAN_LT_CURRENT=7
+LIBASSUAN_LT_AGE=7
+LIBASSUAN_LT_REVISION=3
 
 # If the API is changed in an incompatible way: increment the next counter.
 LIBASSUAN_CONFIG_API_VERSION=2
@@ -74,7 +75,7 @@ PACKAGE=$PACKAGE_NAME
 VERSION=$PACKAGE_VERSION
 
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([serial-tests dist-bzip2 no-dist-gzip])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR(src/assuan.h.in)
 AC_CONFIG_MACRO_DIR(m4)
@@ -125,6 +126,10 @@ AH_TOP([
 
 /* Enable gpg-error's strerror macro under W32CE.  */
 #define GPG_ERR_ENABLE_ERRNO_MACROS 1
+
+/* Provide the es_ macro for estream.  */
+#define GPGRT_ENABLE_ES_MACROS 1
+
 ])
 
 AH_BOTTOM([
@@ -253,7 +258,16 @@ changequote([,])dnl
 BUILD_FILEVERSION="${BUILD_FILEVERSION}mym4_revision_dec"
 AC_SUBST(BUILD_FILEVERSION)
 
-BUILD_TIMESTAMP=`date -u +%Y-%m-%dT%H:%M+0000 2>/dev/null || date`
+AC_ARG_ENABLE([build-timestamp],
+  AC_HELP_STRING([--enable-build-timestamp],
+                 [set an explicit build timestamp for reproducibility.
+                  (default is the current time in ISO-8601 format)]),
+     [if test "$enableval" = "yes"; then
+        BUILD_TIMESTAMP=`date -u +%Y-%m-%dT%H:%M+0000 2>/dev/null || date`
+      else
+        BUILD_TIMESTAMP="$enableval"
+      fi],
+     [BUILD_TIMESTAMP="<none>"])
 AC_SUBST(BUILD_TIMESTAMP)
 AC_DEFINE_UNQUOTED(BUILD_TIMESTAMP, "$BUILD_TIMESTAMP",
                    [The time this package was configured for a build])
@@ -341,12 +355,23 @@ AM_CONDITIONAL(USE_DESCRIPTOR_PASSING, test "$use_descriptor_passing" = "yes")
 
 
 # Checking for libgpg-error.
-AM_PATH_GPG_ERROR(1.8,, AC_MSG_ERROR([libgpg-error was not found]))
+AM_PATH_GPG_ERROR(1.17,, AC_MSG_ERROR([libgpg-error was not found]))
 
 #
 # Checks for library functions.
 #
-AC_CHECK_FUNCS([flockfile funlockfile inet_pton])
+AC_CHECK_FUNCS([flockfile funlockfile inet_pton stat getaddrinfo \
+                getrlimit ])
+
+# If we didn't find inet_pton, it might be in -lsocket (which might
+# require -lnsl)
+if test X"$ac_cv_func_inet_pton" != X"yes" ; then
+    AC_SEARCH_LIBS([inet_pton],[socket],[],[],[-lnsl])
+    if test X"$ac_cv_search_inet_pton" != X"no" ; then
+        AC_DEFINE([HAVE_INET_PTON],1,[Define to 1 if you have `inet_pton'.])
+    fi
+fi
+
 
 # On some systems (e.g. Solaris) nanosleep requires linking to librl.
 # Given that we use nanosleep only as an optimization over a select
@@ -382,7 +407,6 @@ AC_REPLACE_FUNCS(memrchr)
 AC_REPLACE_FUNCS(stpcpy)
 AC_CHECK_HEADERS(unistd.h)
 AC_REPLACE_FUNCS(setenv)
-AC_REPLACE_FUNCS(vasprintf)
 
 
 #

@@ -3,19 +3,30 @@ Section: libs
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
 XSBC-Pexip-Original-Maintainer: Debian GnuPG-Maintainers <pkg-gnupg-maint@lists.alioth.debian.org>
-XSBC-Pexip-Original-Uploaders: Eric Dorland <eric@debian.org>
-Build-Depends: debhelper (>= 9), dh-autoreconf, libgpg-error-dev
-Standards-Version: 3.9.5
-Vcs-Git: git://anonscm.debian.org/pkg-gnupg/libassuan.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnupg/libassuan.git
-Homepage: http://www.gnupg.org/(en)/related_software/libassuan/index.html
+XSBC-Pexip-Original-Uploaders:
+ Eric Dorland <eric@debian.org>,
+ Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
+Build-Depends:
+ debhelper (>= 10~),
+ dh-autoreconf,
+ libgpg-error-dev (>= 1.17),
+Build-Depends-Indep:
+ libgpg-error-mingw-w64-dev,
+ mingw-w64,
+Standards-Version: 3.9.8
+Vcs-Git: https://anonscm.debian.org/git/pkg-gnupg/libassuan.git
+Vcs-Browser: https://anonscm.debian.org/git/pkg-gnupg/libassuan.git
+Homepage: https://www.gnupg.org/related_software/libassuan/index.html
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: libassuan0
 Architecture: any
 Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: IPC library for the GnuPG components
  Libassuan is a small library implementing the so-called "Assuan
  protocol". This protocol is used for IPC between most newer GnuPG
@@ -24,9 +35,10 @@ Description: IPC library for the GnuPG components
 Package: libassuan-dev
 Architecture: any
 Section: libdevel
-Depends: dpkg (>= 1.15.4) | install-info,
-         libassuan0 (= ${binary:Version}),
-         ${misc:Depends}
+Depends:
+ dpkg (>= 1.15.4) | install-info,
+ libassuan0 (= ${binary:Version}),
+ ${misc:Depends},
 Description: IPC library for the GnuPG components -- header files
  Libassuan is a small library implementing the so-called "Assuan
  protocol". This protocol is used for IPC between most newer GnuPG
@@ -34,16 +46,21 @@ Description: IPC library for the GnuPG components -- header files
  .
  This package contains header files and static libraries for libassuan.
 
-Package: libassuan0-dbg
-Architecture: any
-Multi-Arch: same
-Section: debug
+Package: libassuan-mingw-w64-dev
+Architecture: all
 Priority: extra
-Pre-Depends: ${misc:Pre-Depends}
-Depends: libassuan0 (= ${binary:Version}), ${misc:Depends}
-Description: IPC library for the GnuPG components -- debugging symbols
+Section: libdevel
+Depends:
+ ${misc:Depends},
+Suggests:
+ wine,
+Description: IPC library for the GnuPG components -- Windows port
  Libassuan is a small library implementing the so-called "Assuan
  protocol". This protocol is used for IPC between most newer GnuPG
  components. Both server and client side functions are provided.
  .
- This package contains debugging symbols for libassuan.
+ This package contains header files and static libraries for libassuan.
+ .
+ This is a Windows version of libassuan.  It's meant to be used when
+ cross-building software that targets the Windows platform, e.g. the
+ win32-loader component of Debian-Installer.
