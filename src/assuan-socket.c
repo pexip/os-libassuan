@@ -1,21 +1,22 @@
 /* assuan-socket.c - Socket wrapper
-   Copyright (C) 2004, 2005, 2009 Free Software Foundation, Inc.
-   Copyright (C) 2001-2015 g10 Code GmbH
-
-   This file is part of Assuan.
-
-   Assuan is free software; you can redistribute it and/or modify it
-   under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 2.1 of
-   the License, or (at your option) any later version.
-
-   Assuan is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2004, 2005, 2009 Free Software Foundation, Inc.
+ * Copyright (C) 2001-2015 g10 Code GmbH
+ *
+ * This file is part of Assuan.
+ *
+ * Assuan is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * Assuan is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1+
  */
 
 #ifdef HAVE_CONFIG_H
@@ -104,6 +105,11 @@
 #ifndef SUN_LEN
 # define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path) \
 	               + strlen ((ptr)->sun_path))
+#endif
+
+
+#ifndef INADDR_LOOPBACK
+# define INADDR_LOOPBACK ((in_addr_t) 0x7f000001) /* 127.0.0.1.  */
 #endif
 
 
@@ -697,13 +703,18 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
   struct sockaddr_in  proxyaddr_in;
   struct sockaddr *proxyaddr;
   size_t proxyaddrlen;
-  struct sockaddr_in6 *addr_in6;
-  struct sockaddr_in  *addr_in;
+  union {
+    struct sockaddr *addr;
+    struct sockaddr_in *addr_in;
+    struct sockaddr_in6 *addr_in6;
+  } addru;
   unsigned char buffer[22+512]; /* The extra 512 gives enough space
                                    for username/password or the
                                    hostname. */
   size_t buflen, hostnamelen;
   int method;
+
+  addru.addr = addr;
 
   /* memset (&proxyaddr_in6, 0, sizeof proxyaddr_in6); */
   memset (&proxyaddr_in, 0, sizeof proxyaddr_in);
@@ -740,6 +751,11 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
       ret = _assuan_connect (ctx, HANDLE2SOCKET (sock),
                              proxyaddr, proxyaddrlen);
     }
+  /* If we get an EINPROGRESS here the caller is trying to do a
+   * non-blocking connect (e.g. for custom time out handling) which
+   * fails here.  The easiest fix would be to allow the client to tell
+   * us the timeout value and we do the timeout handling later on in the
+   * Socks protocol.  */
   if (ret)
     return ret;
   buffer[0] = 5; /* RFC-1928 VER field.  */
@@ -803,7 +819,7 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
       if (buffer[0] != 1)
         {
           /* SOCKS server returned wrong version.  */
-          gpg_err_set_errno (EPROTO);
+          gpg_err_set_errno (EPROTONOSUPPORT);
           return -1;
         }
       if (buffer[1])
@@ -837,20 +853,16 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
     }
   else if (addr->sa_family == AF_INET6)
     {
-      addr_in6 = (struct sockaddr_in6 *)addr;
-
       buffer[3] = 4; /* ATYP = IPv6 */
-      memcpy (buffer+ 4, &addr_in6->sin6_addr.s6_addr, 16); /* DST.ADDR */
-      memcpy (buffer+20, &addr_in6->sin6_port, 2);          /* DST.PORT */
+      memcpy (buffer+ 4, &addru.addr_in6->sin6_addr.s6_addr, 16); /* DST.ADDR */
+      memcpy (buffer+20, &addru.addr_in6->sin6_port, 2);          /* DST.PORT */
       buflen = 22;
     }
   else
     {
-      addr_in = (struct sockaddr_in *)addr;
-
       buffer[3] = 1; /* ATYP = IPv4 */
-      memcpy (buffer+4, &addr_in->sin_addr.s_addr, 4); /* DST.ADDR */
-      memcpy (buffer+8, &addr_in->sin_port, 2);        /* DST.PORT */
+      memcpy (buffer+4, &addru.addr_in->sin_addr.s_addr, 4); /* DST.ADDR */
+      memcpy (buffer+8, &addru.addr_in->sin_port, 2);        /* DST.PORT */
       buflen = 10;
     }
   ret = do_writen (ctx, sock, buffer, buflen);
@@ -863,7 +875,7 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
     {
       /* Socks server returned wrong version or the reserved field is
          not zero.  */
-      gpg_err_set_errno (EPROTO);
+      gpg_err_set_errno (EPROTONOSUPPORT);
       return -1;
     }
   if (buffer[1])
@@ -920,15 +932,22 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
 static int
 use_socks (struct sockaddr *addr)
 {
+  union {
+    struct sockaddr *addr;
+    struct sockaddr_in *addr_in;
+    struct sockaddr_in6 *addr_in6;
+  } addru;
+
+  addru.addr = addr;
+
   if (!tor_mode)
     return 0;
   else if (addr->sa_family == AF_INET6)
     {
-      struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)addr;
       const unsigned char *s;
       int i;
 
-      s = (unsigned char *)&addr_in6->sin6_addr.s6_addr;
+      s = (unsigned char *)&addru.addr_in6->sin6_addr.s6_addr;
       if (s[15] != 1)
         return 1;   /* Last octet is not 1 - not the loopback address.  */
       for (i=0; i < 15; i++, s++)
@@ -939,9 +958,7 @@ use_socks (struct sockaddr *addr)
     }
   else if (addr->sa_family == AF_INET)
     {
-      struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
-
-      if (*(unsigned char*)&addr_in->sin_addr.s_addr == 127)
+      if (*(unsigned char*)&addru.addr_in->sin_addr.s_addr == 127)
         return 0; /* Loopback (127.0.0.0/8) */
 
       return 1;
@@ -1483,4 +1500,11 @@ int
 assuan_sock_check_nonce (assuan_fd_t fd, assuan_sock_nonce_t *nonce)
 {
   return _assuan_sock_check_nonce (sock_ctx, fd, nonce);
+}
+
+void
+assuan_sock_set_system_hooks (assuan_system_hooks_t system_hooks)
+{
+  if (sock_ctx)
+    _assuan_system_hooks_copy (&sock_ctx->system, system_hooks);
 }

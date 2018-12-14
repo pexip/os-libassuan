@@ -1,7 +1,7 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: libassuan
 Upstream-Contact: Werner Koch <wk@gnupg.org>
-Source: ftp://ftp.gnupg.org/gcrypt/alpha/libassuan/
+Source: https://gnupg.org/ftp/gcrypt/libassuan/
 
 Files: *
  Makefile.am

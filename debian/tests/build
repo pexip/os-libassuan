@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+gcc -o test-run $(pkg-config --cflags --libs libassuan) -x c - <<EOF
+#include <assuan.h>
+#include <stdio.h>
+int main() {
+  assuan_context_t ctx;
+  const char *gpgrt_version, *assuan_version;
+  gpg_error_t err;
+
+  gpgrt_version = gpgrt_check_version (GPGRT_VERSION);
+  assuan_version = assuan_check_version (ASSUAN_VERSION);
+  printf ("gpgrt version %s\nassuan version %s\n", gpgrt_version, assuan_version);
+
+  err = assuan_new (&ctx);
+  if (err) {
+    fprintf (stderr, "assuan_new failed: %s\n", gpg_strerror (err));
+    return 1;
+  }
+  assuan_release (ctx);
+}
+EOF
+
+./test-run
+rm -f test-run

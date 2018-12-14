@@ -1,21 +1,22 @@
 /* assuan.c - Global interface (not specific to context).
-   Copyright (C) 2009 Free Software Foundation, Inc.
-   Copyright (C) 2001, 2002, 2012, 2013 g10 Code GmbH
-
-   This file is part of Assuan.
-
-   Assuan is free software; you can redistribute it and/or modify it
-   under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 2.1 of
-   the License, or (at your option) any later version.
-
-   Assuan is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2009 Free Software Foundation, Inc.
+ * Copyright (C) 2001, 2002, 2012, 2013 g10 Code GmbH
+ *
+ * This file is part of Assuan.
+ *
+ * Assuan is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * Assuan is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1+
  */
 
 
@@ -280,5 +281,7 @@ compare_versions (const char *my_version, const char *req_version)
 const char *
 assuan_check_version (const char *req_version)
 {
+  if (req_version && req_version[0] == 1 && req_version[1] == 1)
+    return _assuan_sysutils_blurb ();
   return compare_versions (PACKAGE_VERSION, req_version);
 }

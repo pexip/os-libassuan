@@ -8,6 +8,7 @@
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
  * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * SPDX-License-Identifier: FSFULLR
  */
 
 /* This file is processed by configure to create versioninfo.rc */
@@ -39,7 +40,7 @@ BEGIN
             VALUE "FileDescription", "Assuan - GnuPG IPC\0"
             VALUE "FileVersion", "@LIBASSUAN_LT_CURRENT@.@LIBASSUAN_LT_AGE@.@LIBASSUAN_LT_REVISION@.@BUILD_REVISION@\0"
             VALUE "InternalName", "libassuan\0"
-            VALUE "LegalCopyright", "Copyright © 2001-2015 g10 Code GmbH\0"
+            VALUE "LegalCopyright", "Copyright © 2001-2018 g10 Code GmbH\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "libassuan.dll\0"
             VALUE "PrivateBuild", "\0"
@@ -49,4 +50,3 @@ BEGIN
         END
     END
 END
-

@@ -1,3 +1,64 @@
+libassuan (2.5.2-1) unstable; urgency=medium
+
+  * new upstream release
+  * use DEP-14 branch naming
+  * d/control: add Rules-Requires-Root: no
+  * refresh patches
+  * Re-export upstream signing key without extra signatures.
+  * Standards-Version: bump to 4.2.1 (no changes needed)
+  * added Build-Dependes-Package to libassuan0.symbols
+  * ensure that we ship everything upstream wants (or explicitly ignore it)
+  * initial simple "can i build?" autopkgtest
+  * ignore files we do not plan to ship
+  * ship libassuan.pc for pkg-config
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Fri, 14 Dec 2018 18:57:26 -0500
+
+libassuan (2.5.1-2) unstable; urgency=medium
+
+  * convert to debhelper 11
+  * Standards-Version: bump to 4.1.3 (no changes needed)
+  * d/copyright: Format: use https
+  * use https for fetching upstream tarballs
+  * d/control: move Vcs to salsa
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Mon, 05 Feb 2018 20:32:01 -0500
+
+libassuan (2.5.1-1) unstable; urgency=medium
+
+  [ Eric Dorland ]
+  * New upstream release
+  * debian/libassuan0.symbols: Add new assuan_sock_set_system_hooks symbol.
+
+  [ Daniel Kahn Gillmor ]
+  * d/changelog: remove trailing whitespace
+  * d/control: drop duplicate Priority
+  * Standards-Version: bump to 4.1.2 (no changes needed)
+
+ -- Eric Dorland <eric@debian.org>  Sat, 09 Dec 2017 00:50:34 -0500
+
+libassuan (2.4.5-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Eric Dorland <eric@debian.org>  Sun, 03 Dec 2017 15:01:32 -0500
+
+libassuan (2.4.4-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/control: Mark libassuan-mingw-w64-dev as priority optional.
+  * debian/control: Standards-Version to 4.1.1.
+  * debian/patches/*: Refresh patches.
+
+ -- Eric Dorland <eric@debian.org>  Sat, 25 Nov 2017 00:54:20 -0500
+
+libassuan (2.4.3-3) unstable; urgency=medium
+
+  * debian/control, debian/rules: Drop unnecessary dh-autoreconf.
+  * debian/control: Standards-Version to 4.0.1, no changes.
+
+ -- Eric Dorland <eric@debian.org>  Thu, 10 Aug 2017 18:28:33 -0400
+
 libassuan (2.4.3-2) unstable; urgency=medium
 
   * updated debian/watch
@@ -19,7 +80,7 @@ libassuan (2.4.3-1) unstable; urgency=medium
   * clean up URLs in debian/control
 
  -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Fri, 15 Jul 2016 02:00:30 +0200
- 
+
 libassuan (2.4.2-3) unstable; urgency=medium
 
   * add new libassuan-mingw-w64-dev targeting cross-building for Windows
@@ -210,7 +271,7 @@ libassuan (1.0.4-1) unstable; urgency=low
 libassuan (1.0.3-1) unstable; urgency=low
 
   * New upstream release.
-  * debian/copyright: 
+  * debian/copyright:
     - Add forgotten Copyright line.
     - Fix license to be LGPL 2.1 again, as upstream reverted the license change.
 
@@ -241,13 +302,13 @@ libassuan (1.0.0-1) unstable; urgency=medium
 libassuan (0.9.3-1) unstable; urgency=medium
 
   * New upstream release.
-  * debian/control: Add depends and build depends on libpth-dev. 
+  * debian/control: Add depends and build depends on libpth-dev.
 
  -- Eric Dorland <eric@debian.org>  Sat, 14 Oct 2006 17:05:06 -0400
 
 libassuan (0.6.10-2) unstable; urgency=low
 
-  * debian/watch: Add watch file. 
+  * debian/watch: Add watch file.
   * debian/control:
     - Upgrade Standards-Version to 3.7.2.1.
 
@@ -286,7 +347,7 @@ libassuan (0.6.8-1) unstable; urgency=low
 libassuan (0.6.7-1) unstable; urgency=low
 
   * New upstream release.
-  * debian/control: 
+  * debian/control:
     - Replace it's for its. (Closes: #268520)
     - Add a missing "is". (Closes: #277226)
 

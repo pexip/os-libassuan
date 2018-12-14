@@ -3,7 +3,7 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf
+	dh $@
 
 override_dh_auto_configure:
 	dh_auto_configure --builddirectory build -- --enable-static
@@ -43,3 +43,6 @@ override_dh_auto_install-indep:
 	  || exit 1 ; \
 	  cd .. ; \
 	done
+
+override_dh_missing:
+	dh_missing --list-missing
