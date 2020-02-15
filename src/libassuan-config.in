@@ -8,14 +8,15 @@
 # This file is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# SPDX-License-Identifier: FSFULLR
 
 # Configure libgpg-error.
 gpg_error_cflags="@GPG_ERROR_CFLAGS@"
 gpg_error_libs="@GPG_ERROR_LIBS@"
 
 PGM=libassuan-config
-lib="@LIBASSUAN_CONFIG_LIB@"
-extralibs="@LIBASSUAN_CONFIG_EXTRA_LIBS@ $gpg_error_libs"
+lib="@LIBASSUAN_CONFIG_LIBS@"
+extralibs="$gpg_error_libs"
 cflags="@LIBASSUAN_CONFIG_CFLAGS@ $gpg_error_cflags"
 api_version="@LIBASSUAN_CONFIG_API_VERSION@"
 my_host="@LIBASSUAN_CONFIG_HOST@"
@@ -69,8 +70,17 @@ while test $# -gt 0; do
     --exec-prefix)
       echo_exec_prefix=yes
       ;;
-    --version)
-      echo "@VERSION@"
+    --variable=*)
+	case "${1#*=}" in
+	    prefix) echo "$prefix" ;;
+	    exec_prefix) echo "$exec_prefix" ;;
+	    host) echo "$my_host" ;;
+	    api_version) echo "$api_version" ;;
+	esac
+	exit 0
+	;;
+    --modversion|--version)
+      echo "@PACKAGE_VERSION@"
       exit 0
       ;;
     --api-version)

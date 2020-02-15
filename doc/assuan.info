@@ -1,4 +1,4 @@
-This is assuan.info, produced by makeinfo version 5.2 from assuan.texi.
+This is assuan.info, produced by makeinfo version 6.3 from assuan.texi.
 
 INFO-DIR-SECTION GNU Libraries
 START-INFO-DIR-ENTRY
@@ -7,8 +7,8 @@ END-INFO-DIR-ENTRY
 
 This file documents the use and the internals of Assuan.
 
-   This is Edition 2.4.3, last updated 27 November 2015, of 'The
-'Developing with Assuan' Manual', for Version 2.4.3.
+   This is Edition 2.5.2, last updated 7 December 2017, of 'The
+'Developing with Assuan' Manual', for Version 2.5.2.
 
    Published by the Free Software Foundation
 51 Franklin Street, Fifth Floor
@@ -856,6 +856,14 @@ creation.  Here are some of them:
           (assuan_system_hooks_t SYSTEM_HOOKS)
      Set the default system hooks to use.  There is currently no way to
      reset to the default system hooks.
+
+ -- Function: void assuan_sock_set_system_hooks
+          (assuan_system_hooks_t SYSTEM_HOOKS)
+     The socket subsystem uses an internal context which uses the
+     default system hooks.  This function allows to change these system
+     hooks.  The function is not thread-safe and only useful if a
+     certain order of assuan and assuan socket initializations are
+     required.
 
  -- Function: void assuan_ctx_set_system_hooks (assuan_context_t CTX,
           assuan_system_hooks_t SYSTEM_HOOKS)
@@ -3141,34 +3149,34 @@ Index
 * Menu:
 
 * AM_PATH_LIBASSUAN:                     Automake.            (line  11)
-* assuan_accept:                         Server code.         (line 263)
-* assuan_begin_confidential:             Contexts.            (line 106)
-* assuan_close_input_fd:                 Utilities.           (line  92)
-* assuan_close_output_fd:                Utilities.           (line  99)
-* assuan_command_parse_fd:               Utilities.           (line  56)
+* assuan_accept:                         Server code.         (line 267)
+* assuan_begin_confidential:             Contexts.            (line 110)
+* assuan_close_input_fd:                 Utilities.           (line  93)
+* assuan_close_output_fd:                Utilities.           (line 100)
+* assuan_command_parse_fd:               Utilities.           (line  57)
 * assuan_context_t:                      Data Types.          (line   9)
-* assuan_ctx_set_system_hooks:           Contexts.            (line 208)
-* assuan_end_confidential:               Contexts.            (line 113)
+* assuan_ctx_set_system_hooks:           Contexts.            (line 222)
+* assuan_end_confidential:               Contexts.            (line 117)
 * assuan_fdopen:                         Data Types.          (line  21)
 * assuan_fd_t:                           Data Types.          (line  16)
-* assuan_flag_t:                         Contexts.            (line  78)
-* assuan_get_active_fds:                 Utilities.           (line 153)
+* assuan_flag_t:                         Contexts.            (line  81)
+* assuan_get_active_fds:                 Utilities.           (line 154)
 * assuan_get_assuan_log_prefix:          Default Log Handler. (line  12)
 * assuan_get_assuan_log_stream:          Default Log Handler. (line  26)
-* assuan_get_command_name:               Utilities.           (line  72)
-* assuan_get_data_fp:                    Utilities.           (line  35)
-* assuan_get_flag:                       Contexts.            (line 102)
+* assuan_get_command_name:               Utilities.           (line  73)
+* assuan_get_data_fp:                    Utilities.           (line  36)
+* assuan_get_flag:                       Contexts.            (line 105)
 * assuan_get_gpg_err_source:             Initializing the library.
-                                                              (line  70)
-* assuan_get_input_fd:                   Utilities.           (line  80)
+                                                              (line  72)
+* assuan_get_input_fd:                   Utilities.           (line  81)
 * assuan_get_log_cb:                     Initializing the library.
-                                                              (line 109)
+                                                              (line 112)
 * assuan_get_malloc_hooks:               Initializing the library.
-                                                              (line  53)
-* assuan_get_output_fd:                  Utilities.           (line  86)
-* assuan_get_peercred:                   Utilities.           (line 140)
-* assuan_get_pid:                        Utilities.           (line 117)
-* assuan_get_pointer:                    Contexts.            (line  59)
+                                                              (line  54)
+* assuan_get_output_fd:                  Utilities.           (line  87)
+* assuan_get_peercred:                   Utilities.           (line 141)
+* assuan_get_pid:                        Utilities.           (line 118)
+* assuan_get_pointer:                    Contexts.            (line  61)
 * assuan_init_pipe_server:               Server code.         (line  74)
 * assuan_init_socket_server:             Server code.         (line  90)
 * assuan_inquire:                        Utilities.           (line  17)
@@ -3178,107 +3186,108 @@ Index
                                                               (line  41)
 * assuan_new:                            Contexts.            (line  13)
 * assuan_new_ext:                        Contexts.            (line  33)
-* assuan_peercred_t:                     Utilities.           (line 127)
-* assuan_pending_line:                   Utilities.           (line 173)
+* assuan_peercred_t:                     Utilities.           (line 128)
+* assuan_pending_line:                   Utilities.           (line 174)
 * assuan_pipe_connect:                   Client code.         (line  12)
-* assuan_process:                        Server code.         (line 273)
+* assuan_process:                        Server code.         (line 277)
 * assuan_process_done:                   External I/O Loop Server.
                                                               (line  75)
 * assuan_process_next:                   External I/O Loop Server.
                                                               (line  69)
 * assuan_read_line:                      Reading and Writing. (line  12)
-* assuan_receivefd:                      Client code.         (line 121)
-* assuan_register_bye_notify:            Server code.         (line 168)
-* assuan_register_cancel_notify:         Server code.         (line 180)
-* assuan_register_command:               Server code.         (line 141)
-* assuan_register_input_notify:          Server code.         (line 198)
-* assuan_register_option_handler:        Server code.         (line 186)
-* assuan_register_output_notify:         Server code.         (line 211)
-* assuan_register_post_cmd_notify:       Server code.         (line 159)
-* assuan_register_reset_notify:          Server code.         (line 174)
-* assuan_release:                        Contexts.            (line  44)
-* assuan_sendfd:                         Client code.         (line 108)
+* assuan_receivefd:                      Client code.         (line 127)
+* assuan_register_bye_notify:            Server code.         (line 170)
+* assuan_register_cancel_notify:         Server code.         (line 183)
+* assuan_register_command:               Server code.         (line 142)
+* assuan_register_input_notify:          Server code.         (line 202)
+* assuan_register_option_handler:        Server code.         (line 189)
+* assuan_register_output_notify:         Server code.         (line 215)
+* assuan_register_post_cmd_notify:       Server code.         (line 161)
+* assuan_register_reset_notify:          Server code.         (line 177)
+* assuan_release:                        Contexts.            (line  45)
+* assuan_sendfd:                         Client code.         (line 114)
 * assuan_send_data:                      Reading and Writing. (line  35)
 * assuan_set_assuan_log_prefix:          Default Log Handler. (line   8)
 * assuan_set_assuan_log_stream:          Default Log Handler. (line  17)
-* assuan_set_error:                      Utilities.           (line 106)
-* assuan_set_flag:                       Contexts.            (line  72)
+* assuan_set_error:                      Utilities.           (line 107)
+* assuan_set_flag:                       Contexts.            (line  74)
 * assuan_set_gpg_err_source:             Initializing the library.
-                                                              (line  62)
-* assuan_set_hello_line:                 Server code.         (line 224)
-* assuan_set_io_monitor:                 Reading and Writing. (line  73)
+                                                              (line  63)
+* assuan_set_hello_line:                 Server code.         (line 228)
+* assuan_set_io_monitor:                 Reading and Writing. (line  72)
 * assuan_set_log_cb:                     Initializing the library.
-                                                              (line 104)
+                                                              (line 106)
 * assuan_set_log_stream:                 Default Log Handler. (line  33)
 * assuan_set_malloc_hooks:               Initializing the library.
                                                               (line  44)
-* assuan_set_okay_line:                  Utilities.           (line  48)
-* assuan_set_pointer:                    Contexts.            (line  52)
-* assuan_set_sock_nonce:                 Server code.         (line 111)
-* assuan_set_system_hooks:               Contexts.            (line 203)
+* assuan_set_okay_line:                  Utilities.           (line  49)
+* assuan_set_pointer:                    Contexts.            (line  53)
+* assuan_set_sock_nonce:                 Server code.         (line 112)
+* assuan_set_system_hooks:               Contexts.            (line 207)
 * assuan_socket_connect:                 Client code.         (line  55)
-* assuan_sock_bind:                      Socket wrappers.     (line  55)
-* assuan_sock_check_nonce:               Socket wrappers.     (line  93)
+* assuan_sock_bind:                      Socket wrappers.     (line  56)
+* assuan_sock_check_nonce:               Socket wrappers.     (line  95)
 * assuan_sock_close:                     Socket wrappers.     (line  20)
-* assuan_sock_connect:                   Socket wrappers.     (line  27)
-* assuan_sock_connect_byname:            Socket wrappers.     (line  38)
+* assuan_sock_connect:                   Socket wrappers.     (line  28)
+* assuan_sock_connect_byname:            Socket wrappers.     (line  39)
 * assuan_sock_deinit:                    Socket wrappers.     (line  17)
-* assuan_sock_get_flag:                  Socket wrappers.     (line 119)
-* assuan_sock_get_nonce:                 Socket wrappers.     (line  87)
+* assuan_sock_get_flag:                  Socket wrappers.     (line 122)
+* assuan_sock_get_nonce:                 Socket wrappers.     (line  88)
 * assuan_sock_init:                      Socket wrappers.     (line  13)
 * assuan_sock_new:                       Socket wrappers.     (line  23)
-* assuan_sock_set_flag:                  Socket wrappers.     (line 112)
-* assuan_sock_set_sockaddr_un:           Socket wrappers.     (line  61)
+* assuan_sock_set_flag:                  Socket wrappers.     (line 114)
+* assuan_sock_set_sockaddr_un:           Socket wrappers.     (line  62)
+* assuan_sock_set_system_hooks:          Contexts.            (line 213)
 * assuan_transact:                       Client code.         (line  72)
 * assuan_write_line:                     Reading and Writing. (line  23)
 * assuan_write_status:                   Utilities.           (line  10)
 * gpg_error_t (*assuan_handler_t) (assuan_context_t CTX, char *LINE): Server code.
-                                                              (line 135)
+                                                              (line 136)
 * int (*assuan_log_cb_t) (assuan_context_t CTX, void *HOOK_VALUE, unsigned int CAT, const char *MSG): Initializing the library.
-                                                              (line  77)
+                                                              (line  79)
 * introduction:                          Top.                 (line   6)
 * LGPL, GNU Lesser General Public License: Library Copying.   (line   6)
 * struct assuan_malloc_hooks:            Initializing the library.
                                                               (line  24)
-* struct assuan_system_hooks:            Contexts.            (line 120)
+* struct assuan_system_hooks:            Contexts.            (line 124)
 * unsigned int (*assuan_io_monitor_t) (assuan_context_t CTX, void *HOOK_VALUE, int INOUT, const char *LINE, size_t LINELEN): Reading and Writing.
                                                               (line  54)
 
 
 
 Tag Table:
-Node: Top908
-Node: Introduction1974
-Node: Assuan4229
-Node: Implementation5273
-Node: Server responses6452
-Node: Client requests8742
-Node: Error codes11780
-Node: Preparation12119
-Node: Header12694
-Node: Building sources13480
-Node: Automake15379
-Node: Multi Threading16527
-Node: Generalities17486
-Node: Data Types17890
-Node: Initializing the library18998
-Ref: function assuan_set_gpg_err_source21694
-Node: Default Log Handler24013
-Node: Contexts25779
-Ref: function assuan_new26359
-Node: Reading and Writing36549
-Node: Client code40024
-Ref: function assuan_sendfd45021
-Ref: function assuan_receivefd45612
-Node: Server code45987
-Node: External I/O Loop58112
-Node: External I/O Loop Client59937
-Node: External I/O Loop Server63022
-Node: Utilities67606
-Ref: Utilities-Footnote-175707
-Node: Socket wrappers75771
-Node: Library Copying82752
-Node: Copying110864
-Node: Index148378
+Node: Top907
+Node: Introduction1973
+Node: Assuan4228
+Node: Implementation5272
+Node: Server responses6451
+Node: Client requests8741
+Node: Error codes11779
+Node: Preparation12118
+Node: Header12693
+Node: Building sources13479
+Node: Automake15378
+Node: Multi Threading16526
+Node: Generalities17485
+Node: Data Types17889
+Node: Initializing the library18997
+Ref: function assuan_set_gpg_err_source21693
+Node: Default Log Handler24012
+Node: Contexts25778
+Ref: function assuan_new26358
+Node: Reading and Writing36930
+Node: Client code40405
+Ref: function assuan_sendfd45402
+Ref: function assuan_receivefd45993
+Node: Server code46368
+Node: External I/O Loop58493
+Node: External I/O Loop Client60318
+Node: External I/O Loop Server63403
+Node: Utilities67987
+Ref: Utilities-Footnote-176088
+Node: Socket wrappers76152
+Node: Library Copying83133
+Node: Copying111245
+Node: Index148759
 
 End Tag Table

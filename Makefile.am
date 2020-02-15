@@ -15,24 +15,32 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: LGPL-2.1+
 ## Process this file with automake to produce Makefile.in
 
 
 ACLOCAL_AMFLAGS = -I m4
+DISTCHECK_CONFIGURE_FLAGS = --enable-doc
 
 # (A suitable gitlog-to-changelog script can be found in GnuPG master.)
 GITLOG_TO_CHANGELOG=gitlog-to-changelog
 
-EXTRA_DIST = autogen.sh autogen.rc README.GIT         	                \
+EXTRA_DIST = autogen.sh autogen.rc README.GIT VERSION                   \
              ChangeLog-2011 doc/ChangeLog-2011 src/ChangeLog-2011 	\
              tests/ChangeLog-2011 contrib/ChangeLog-2011     		\
              build-aux/git-log-footer build-aux/git-log-fix
 
-SUBDIRS = m4 src doc tests
+if BUILD_DOC
+doc = doc
+else
+doc =
+endif
+
+SUBDIRS = m4 src $(doc) tests
 
 
 dist-hook: gen-ChangeLog
-	echo "$(VERSION)" > $(distdir)/VERSION
+
 
 distcheck-hook:
 	set -e; ( \
