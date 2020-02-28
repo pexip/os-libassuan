@@ -7,16 +7,16 @@ XSBC-Pexip-Original-Uploaders:
  Eric Dorland <eric@debian.org>,
  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
 Build-Depends:
- debhelper (>= 10~),
- dh-autoreconf,
+ debhelper (>= 11~),
  libgpg-error-dev (>= 1.17),
 Build-Depends-Indep:
  libgpg-error-mingw-w64-dev,
  mingw-w64,
-Standards-Version: 3.9.8
-Vcs-Git: https://anonscm.debian.org/git/pkg-gnupg/libassuan.git
-Vcs-Browser: https://anonscm.debian.org/git/pkg-gnupg/libassuan.git
+Standards-Version: 4.2.1
+Vcs-Git: https://salsa.debian.org/debian/libassuan.git
+Vcs-Browser: https://salsa.debian.org/debian/libassuan
 Homepage: https://www.gnupg.org/related_software/libassuan/index.html
+Rules-Requires-Root: no
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ buster
 
 Package: libassuan0
@@ -48,7 +48,6 @@ Description: IPC library for the GnuPG components -- header files
 
 Package: libassuan-mingw-w64-dev
 Architecture: all
-Priority: extra
 Section: libdevel
 Depends:
  ${misc:Depends},

@@ -20,7 +20,7 @@ make[5]: Leaving directory '/home/dkg/src/pkg-gnupg/libassuan/build-win32/src'
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/libassuan.def b/src/libassuan.def
-index c320151..dfce924 100644
+index ed9ceaf..7d47ba6 100644
 --- a/src/libassuan.def
 +++ b/src/libassuan.def
 @@ -1,3 +1,4 @@
@@ -29,7 +29,7 @@ index c320151..dfce924 100644
  ; Copyright (C) 2005, 2009 g10 Code GmbH
  ;
 @@ -18,7 +19,6 @@
- ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+ ; SPDX-License-Identifier: LGPL-2.1+
  
  
 -EXPORTS

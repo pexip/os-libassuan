@@ -17,6 +17,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: LGPL-2.1+
 
 # Process this file with autoconf to produce a configure script.
 
@@ -31,8 +32,8 @@ min_automake_version="1.14"
 # for the LT versions.
 m4_define([mym4_package],[libassuan])
 m4_define([mym4_major], [2])
-m4_define([mym4_minor], [4])
-m4_define([mym4_micro], [3])
+m4_define([mym4_minor], [5])
+m4_define([mym4_micro], [2])
 
 # To start a new development series, i.e a new major or minor number
 # you need to mark an arbitrary commit before the first beta release
@@ -50,8 +51,9 @@ m4_define([mym4_isbeta],       m4_argn(2, mym4_verslist))
 m4_define([mym4_version],      m4_argn(4, mym4_verslist))
 m4_define([mym4_revision],     m4_argn(7, mym4_verslist))
 m4_define([mym4_revision_dec], m4_argn(8, mym4_verslist))
+m4_esyscmd([echo ]mym4_version[>VERSION])
 
-AC_INIT([mym4_package],[mym4_version], [http://bugs.gnupg.org])
+AC_INIT([mym4_package],[mym4_version], [https://bugs.gnupg.org])
 
 # LT Version numbers, remember to change them just *before* a release.
 #   (Code changed:			REVISION++)
@@ -59,9 +61,9 @@ AC_INIT([mym4_package],[mym4_version], [http://bugs.gnupg.org])
 #   (Interfaces added:			AGE++)
 #   (Interfaces removed/changed:	AGE=0)
 #
-LIBASSUAN_LT_CURRENT=7
-LIBASSUAN_LT_AGE=7
-LIBASSUAN_LT_REVISION=3
+LIBASSUAN_LT_CURRENT=8
+LIBASSUAN_LT_AGE=8
+LIBASSUAN_LT_REVISION=2
 
 # If the API is changed in an incompatible way: increment the next counter.
 LIBASSUAN_CONFIG_API_VERSION=2
@@ -70,9 +72,6 @@ LIBASSUAN_CONFIG_API_VERSION=2
 AC_SUBST(LIBASSUAN_LT_CURRENT)
 AC_SUBST(LIBASSUAN_LT_AGE)
 AC_SUBST(LIBASSUAN_LT_REVISION)
-
-PACKAGE=$PACKAGE_NAME
-VERSION=$PACKAGE_VERSION
 
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([serial-tests dist-bzip2 no-dist-gzip])
@@ -86,16 +85,9 @@ AB_INIT
 
 AC_GNU_SOURCE
 
-
-AC_SUBST(PACKAGE)
-AC_SUBST(VERSION)
-AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of this package])
-AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version of this package])
-AC_DEFINE_UNQUOTED(PACKAGE_BUGREPORT, "$PACKAGE_BUGREPORT",[Bug report address])
 VERSION_NUMBER=m4_esyscmd(printf "0x%02x%02x%02x" mym4_major \
                           mym4_minor mym4_micro)
 AC_SUBST(VERSION_NUMBER)
-
 
 # Don't default to build static libs.
 LT_PREREQ([2.2.6])
@@ -105,16 +97,21 @@ LT_LANG([Windows Resource])
 # For now we hardcode the use of version scripts.  It would be better
 # to write a test for this or even implement this within libtool.
 have_ld_version_script=no
+check_descriptor_passing=yes
 case "${host}" in
+    *-*-cygwin*)
+        check_descriptor_passing=no
+        ;;
     *-*-linux*)
-	have_ld_version_script=yes
+        have_ld_version_script=yes
         ;;
     *-*-gnu*)
-	have_ld_version_script=yes
+        have_ld_version_script=yes
         ;;
     *-apple-darwin*)
         AC_DEFINE(_XOPEN_SOURCE, 500, Activate POSIX interface on MacOS X)
-        AC_DEFINE(_DARWIN_C_SOURCE, 1, Activate CMSG_LEN/CMSG_SPACE on MacOS X)
+        AC_DEFINE(_DARWIN_C_SOURCE, 900000L,
+                  Expose all libc features (__DARWIN_C_FULL))
         ;;
 esac
 
@@ -216,10 +213,10 @@ case "${host}" in
         have_w32_system=yes
         ;;
     *-solaris*)
-	AC_DEFINE(_XOPEN_SOURCE, 500, Activate extensions on Solaris)
-	AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Activate extensions on Solaris)
-	AC_DEFINE(__EXTENSIONS__, 1, Activate extensions on Solaris)
-	;;
+        AC_DEFINE(_XOPEN_SOURCE, 500, Activate extensions on Solaris)
+        AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Activate extensions on Solaris)
+        AC_DEFINE(__EXTENSIONS__, 1, Activate extensions on Solaris)
+        ;;
 esac
 
 if test "$have_dosish_system" = yes; then
@@ -278,7 +275,7 @@ AC_DEFINE_UNQUOTED(BUILD_TIMESTAMP, "$BUILD_TIMESTAMP",
 # Check for network libraries.  They are needed for tests.
 #
 AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
-	[NETLIBS="-lsocket $NETLIBS"]))
+        [NETLIBS="-lsocket $NETLIBS"]))
 AC_SUBST(NETLIBS)
 
 if test "$have_w32_system" = yes; then
@@ -293,18 +290,16 @@ fi
 #
 # Provide info for src/libassuan-config.in
 #
-LIBASSUAN_CONFIG_LIB="-lassuan"
+LIBASSUAN_CONFIG_LIBS="-lassuan"
 LIBASSUAN_CONFIG_CFLAGS=""
 LIBASSUAN_CONFIG_HOST="$host"
-LIBASSUAN_CONFIG_EXTRA_LIBS=
 if test x"$NETLIBS" != x; then
-  LIBASSUAN_CONFIG_EXTRA_LIBS="$LIBASSUAN_CONFIG_EXTRA_LIBS $NETLIBS"
+  LIBASSUAN_CONFIG_LIBS="$LIBASSUAN_CONFIG_LIBS $NETLIBS"
 fi
-AC_SUBST(LIBASSUAN_CONFIG_LIB)
+AC_SUBST(LIBASSUAN_CONFIG_LIBS)
 AC_SUBST(LIBASSUAN_CONFIG_CFLAGS)
 AC_SUBST(LIBASSUAN_CONFIG_HOST)
 AC_SUBST(LIBASSUAN_CONFIG_API_VERSION)
-AC_SUBST(LIBASSUAN_CONFIG_EXTRA_LIBS)
 
 #
 # Checks for header files.
@@ -312,7 +307,7 @@ AC_SUBST(LIBASSUAN_CONFIG_EXTRA_LIBS)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([string.h locale.h sys/uio.h stdint.h inttypes.h \
                   sys/types.h sys/stat.h unistd.h sys/time.h fcntl.h \
-                  sys/select.h ])
+                  sys/select.h ucred.h sys/ucred.h])
 AC_TYPE_UINTPTR_T
 AC_TYPE_UINT16_T
 
@@ -328,10 +323,13 @@ AC_DECL_SYS_SIGLIST
 gl_HEADER_SYS_SOCKET
 gl_TYPE_SOCKLEN_T
 
-AC_CHECK_MEMBER(struct cmsghdr.cmsg_len,
-                [use_descriptor_passing=yes],
-                [use_descriptor_passing=no
-                 AC_MSG_WARN([
+if test $check_descriptor_passing != yes; then
+    use_descriptor_passing=no
+else
+    AC_CHECK_MEMBER(struct cmsghdr.cmsg_len,
+                    [use_descriptor_passing=yes],
+                    [use_descriptor_passing=no
+                     AC_MSG_WARN([
 ***
 *** Data structure for sending ancillary data missing.
 *** Descriptor passing won't work.
@@ -347,6 +345,7 @@ AC_CHECK_MEMBER(struct cmsghdr.cmsg_len,
 #endif
 #include <unistd.h>
        ])
+fi
 if test "$use_descriptor_passing" = "yes"; then
  AC_DEFINE(USE_DESCRIPTOR_PASSING, 1,
             [Defined if descriptor passing is supported])
@@ -410,48 +409,30 @@ AC_REPLACE_FUNCS(setenv)
 
 
 #
-# Check for the getsockopt SO_PEERCRED
+# Check for the getsockopt SO_PEERCRED, etc.
 #
-AC_MSG_CHECKING(for SO_PEERCRED)
-AC_CACHE_VAL(assuan_cv_sys_so_peercred,
-      [AC_TRY_COMPILE([#include <sys/socket.h>],
-         [struct ucred cr;
-          int cl = sizeof cr;
-          getsockopt (1, SOL_SOCKET, SO_PEERCRED, &cr, &cl);],
-          assuan_cv_sys_so_peercred=yes,
-          assuan_cv_sys_so_peercred=no)
-       ])
-AC_MSG_RESULT($assuan_cv_sys_so_peercred)
+AC_CHECK_MEMBER(struct sockpeercred.pid,
+		[AC_DEFINE(HAVE_STRUCT_SOCKPEERCRED_PID, 1,
+		 Define if struct sockpeercred contains the pid member.)],
+		 [], [#include <sys/types.h>
+#include <sys/socket.h> ])
 
-if test $assuan_cv_sys_so_peercred = yes; then
-  AC_DEFINE(HAVE_SO_PEERCRED, 1,
-            [Defined if SO_PEERCRED is supported (Linux specific)])
-else
-  # Check for the getsockopt LOCAL_PEEREID (NetBSD)
-  AC_MSG_CHECKING(for LOCAL_PEEREID)
-  AC_CACHE_VAL(assuan_cv_sys_so_local_peereid,
-      [AC_TRY_COMPILE([#include <sys/socket.>
-         #include <sys/un.h>],
-         [struct unpcbid unp;
-          int unpl = sizeof unp;
-          getsockopt (1, SOL_SOCKET, LOCAL_PEEREID, &unp, &unpl);],
-          assuan_cv_sys_so_local_peereid=yes,
-          assuan_cv_sys_so_local_peereid=no)
-       ])
-  AC_MSG_RESULT($assuan_cv_sys_so_local_peereid)
+# (Open)Solaris
+AC_CHECK_FUNCS([getpeerucred])
 
-  if test $assuan_cv_sys_so_local_peereid = yes; then
-    AC_DEFINE(HAVE_LOCAL_PEEREID, 1,
-              [Defined if LOCAL_PEEREID is supported (NetBSD specific)])
-  else
-    # (Open)Solaris
-    AC_CHECK_FUNCS([getpeerucred], AC_CHECK_HEADERS([ucred.h]))
-    if test $ac_cv_func_getpeerucred != yes; then
-        # FreeBSD
-        AC_CHECK_FUNCS([getpeereid])
-    fi
-  fi
-fi
+# FreeBSD
+AC_CHECK_FUNCS([getpeereid])
+
+
+#
+# Extra features
+#
+build_doc=yes
+AC_ARG_ENABLE([doc], AC_HELP_STRING([--disable-doc],
+                                    [do not build the documentation]),
+                     build_doc=$enableval, build_doc=yes)
+AM_CONDITIONAL([BUILD_DOC], [test "x$build_doc" != xno])
+
 
 #
 # Create the config files.
@@ -463,6 +444,7 @@ AC_CONFIG_FILES([doc/Makefile])
 AC_CONFIG_FILES([tests/Makefile])
 AC_CONFIG_FILES([src/libassuan-config], [chmod +x src/libassuan-config])
 AC_CONFIG_FILES([src/versioninfo.rc])
+AC_CONFIG_FILES([src/libassuan.pc])
 
 AC_OUTPUT
 
