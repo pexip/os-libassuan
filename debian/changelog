@@ -1,3 +1,9 @@
+libassuan (2.5.2-1pexip1) pexip; urgency=medium
+
+  * Migrate to Buster
+
+ -- Vincent Sanders <vince@pexip.com>  Fri, 28 Feb 2020 22:57:05 +0000
+
 libassuan (2.5.2-1) unstable; urgency=medium
 
   * new upstream release
