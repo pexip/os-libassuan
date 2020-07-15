@@ -1,3 +1,9 @@
+libassuan (2.5.2-1pexip2) pexip; urgency=medium
+
+  * Rebuild in buster environment
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Wed, 15 Jul 2020 23:01:03 +0000
+
 libassuan (2.5.2-1pexip1) pexip; urgency=medium
 
   * Migrate to Buster
