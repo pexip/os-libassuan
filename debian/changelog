@@ -1,3 +1,72 @@
+libassuan (2.5.3-7.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * debian/tests/build-windows: updated to fix testsuite flags being
+      incorrectly passed and to skip a test fail on arch arm64. Thanks
+      Gianfranco Costamagna. (Closes: #949664)
+
+ -- Filipi Souza <filipi.saci@gmail.com>  Wed, 10 Jun 2020 06:57:10 -0300
+
+libassuan (2.5.3-7) unstable; urgency=medium
+
+  * export CPPFLAGS_FOR_BUILD as well
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 17 Jul 2019 11:09:10 -0400
+
+libassuan (2.5.3-6) unstable; urgency=medium
+
+  * libassuan-mingw-w64-dev is Multi-Arch: foreign (thanks, Multi-Arch hinter!)
+  * make d/tests/build-windows executable (thanks, LocutusOfBorg)
+  * d/tests/build-windows: export WINESERVER (see #932201)
+  * d/tests/build-windows: avoid stderr spew from wine initialization
+  * avoid build log hardening check warnings for helper programs
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 16 Jul 2019 14:02:45 -0400
+
+libassuan (2.5.3-5) unstable; urgency=medium
+
+  * d/tests/build-windows: clean up
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Mon, 15 Jul 2019 18:36:06 -0400
+
+libassuan (2.5.3-4) unstable; urgency=medium
+
+  * correct autopkgtest control
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Mon, 15 Jul 2019 13:25:20 -0400
+
+libassuan (2.5.3-3) unstable; urgency=medium
+
+  * d/control: fix up Vcs-Git branch
+  * Standards-Version: bump to 4.4.0 (no changes needed)
+  * Development packages should depend on corresponding libgpg-error-dev
+  * libassuan-ming64-w64-dev now Recommends: mingw-w64
+  * d/tests/build: improve ordering for as-needed linkers
+  * d/tests/build-windows: add tests for exercising windows builds
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Mon, 15 Jul 2019 00:53:15 -0400
+
+libassuan (2.5.3-2) unstable; urgency=medium
+
+  * release to unstable
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Sun, 07 Jul 2019 21:36:39 -0400
+
+libassuan (2.5.3-1) experimental; urgency=medium
+
+  * new upstream release (to experimental due to freeze)
+  * debian/tests/build: moar pedantry!
+  * tests/build: use gpgrt all the way down
+  * split out simple-build.c from debian/tests/build
+  * d/tests/simple-build.c: use even more gpgrt (no stdio)
+  * added signing key for NIIBE Yutaka (avoiding #925148)
+  * standards-version: bump to 4.3.0 (no changes needed)
+  * move to debhelper 12
+  * move to DEP-14 branch debian/experimental
+  * d/rules: debug symbol migration is complete
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 20 Mar 2019 09:53:25 -0400
+
 libassuan (2.5.2-1pexip2) pexip; urgency=medium
 
   * Rebuild in buster environment
