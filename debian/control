@@ -6,13 +6,13 @@ Uploaders:
  Eric Dorland <eric@debian.org>,
  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
 Build-Depends:
- debhelper-compat (= 12),
- libgpg-error-dev (>= 1.17),
+ debhelper-compat (= 13),
+ libgpg-error-dev (>= 1.33),
 Build-Depends-Indep:
  libgpg-error-mingw-w64-dev,
  mingw-w64,
-Standards-Version: 4.4.0
-Vcs-Git: https://salsa.debian.org/debian/libassuan.git -b debian/master
+Standards-Version: 4.6.1
+Vcs-Git: https://salsa.debian.org/debian/libassuan.git
 Vcs-Browser: https://salsa.debian.org/debian/libassuan
 Homepage: https://www.gnupg.org/related_software/libassuan/index.html
 Rules-Requires-Root: no
@@ -34,9 +34,8 @@ Package: libassuan-dev
 Architecture: any
 Section: libdevel
 Depends:
- dpkg (>= 1.15.4) | install-info,
  libassuan0 (= ${binary:Version}),
- libgpg-error-dev (>= 1.17),
+ libgpg-error-dev (>= 1.33),
  ${misc:Depends},
 Description: IPC library for the GnuPG components -- header files
  Libassuan is a small library implementing the so-called "Assuan
@@ -50,7 +49,7 @@ Multi-Arch: foreign
 Architecture: all
 Section: libdevel
 Depends:
- libgpg-error-mingw-w64-dev (>= 1.17),
+ libgpg-error-mingw-w64-dev (>= 1.33),
  ${misc:Depends},
 Recommends:
  mingw-w64,

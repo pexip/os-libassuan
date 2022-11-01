@@ -22,7 +22,7 @@
 # Process this file with autoconf to produce a configure script.
 
 
-AC_PREREQ(2.61)
+AC_PREREQ([2.61])
 min_automake_version="1.14"
 
 # To build a release you need to create a tag with the version number
@@ -33,7 +33,7 @@ min_automake_version="1.14"
 m4_define([mym4_package],[libassuan])
 m4_define([mym4_major], [2])
 m4_define([mym4_minor], [5])
-m4_define([mym4_micro], [3])
+m4_define([mym4_micro], [5])
 
 # To start a new development series, i.e a new major or minor number
 # you need to mark an arbitrary commit before the first beta release
@@ -53,7 +53,7 @@ m4_define([mym4_revision],     m4_argn(7, mym4_verslist))
 m4_define([mym4_revision_dec], m4_argn(8, mym4_verslist))
 m4_esyscmd([echo ]mym4_version[>VERSION])
 
-AC_INIT([mym4_package],[mym4_version], [https://bugs.gnupg.org])
+AC_INIT([mym4_package],[mym4_version],[https://bugs.gnupg.org])
 
 # LT Version numbers, remember to change them just *before* a release.
 #   (Code changed:			REVISION++)
@@ -63,7 +63,7 @@ AC_INIT([mym4_package],[mym4_version], [https://bugs.gnupg.org])
 #
 LIBASSUAN_LT_CURRENT=8
 LIBASSUAN_LT_AGE=8
-LIBASSUAN_LT_REVISION=3
+LIBASSUAN_LT_REVISION=5
 
 # If the API is changed in an incompatible way: increment the next counter.
 LIBASSUAN_CONFIG_API_VERSION=2
@@ -78,12 +78,12 @@ AM_INIT_AUTOMAKE([serial-tests dist-bzip2 no-dist-gzip])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR(src/assuan.h.in)
 AC_CONFIG_MACRO_DIR(m4)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 AM_SILENT_RULES
 AB_INIT
 
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 
 # Taken from mpfr-4.0.1, then modified for LDADD_FOR_TESTS_KLUDGE
 dnl Under Linux, make sure that the old dtags are used if LD_LIBRARY_PATH
@@ -291,7 +291,7 @@ BUILD_FILEVERSION="${BUILD_FILEVERSION}mym4_revision_dec"
 AC_SUBST(BUILD_FILEVERSION)
 
 AC_ARG_ENABLE([build-timestamp],
-  AC_HELP_STRING([--enable-build-timestamp],
+  AS_HELP_STRING([--enable-build-timestamp],
                  [set an explicit build timestamp for reproducibility.
                   (default is the current time in ISO-8601 format)]),
      [if test "$enableval" = "yes"; then
@@ -328,9 +328,6 @@ fi
 LIBASSUAN_CONFIG_LIBS="-lassuan"
 LIBASSUAN_CONFIG_CFLAGS=""
 LIBASSUAN_CONFIG_HOST="$host"
-if test x"$NETLIBS" != x; then
-  LIBASSUAN_CONFIG_LIBS="$LIBASSUAN_CONFIG_LIBS $NETLIBS"
-fi
 AC_SUBST(LIBASSUAN_CONFIG_LIBS)
 AC_SUBST(LIBASSUAN_CONFIG_CFLAGS)
 AC_SUBST(LIBASSUAN_CONFIG_HOST)
@@ -352,8 +349,6 @@ AC_TYPE_UINT16_T
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
-AC_TYPE_SIGNAL
-AC_DECL_SYS_SIGLIST
 
 gl_HEADER_SYS_SOCKET
 gl_TYPE_SOCKLEN_T
@@ -463,7 +458,7 @@ AC_CHECK_FUNCS([getpeereid])
 # Extra features
 #
 build_doc=yes
-AC_ARG_ENABLE([doc], AC_HELP_STRING([--disable-doc],
+AC_ARG_ENABLE([doc], AS_HELP_STRING([--disable-doc],
                                     [do not build the documentation]),
                      build_doc=$enableval, build_doc=yes)
 AM_CONDITIONAL([BUILD_DOC], [test "x$build_doc" != xno])
