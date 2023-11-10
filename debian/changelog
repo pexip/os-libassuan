@@ -1,3 +1,67 @@
+libassuan (2.5.5-5) unstable; urgency=medium
+
+  [ Andreas Metzler ]
+  * Stop forcing gpg-error-config usage, fixing FTBFS. (Closes: #1022289)
+
+  [ Daniel Kahn Gillmor ]
+  * drop explicit dpkg dependency, part of essential
+  * reflow text description of win32 linker error patch to
+    avoid very-long-line-length-in-source-file
+  * lintian-overrides: rewrite for parameterized tags
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 01 Nov 2022 18:00:16 -0400
+
+libassuan (2.5.5-4) unstable; urgency=medium
+
+  * drop disjunctive dependency on install-info (Closes: #1013825)
+  * Standards-Version: bump to 4.6.1 (no changes needed)
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Thu, 30 Jun 2022 19:58:34 -0400
+
+libassuan (2.5.5-3) unstable; urgency=medium
+
+  * tests: allow stderr for windows builds
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Sat, 30 Apr 2022 14:22:49 -0400
+
+libassuan (2.5.5-2) unstable; urgency=medium
+
+  * move to DEP-14 branch naming
+  * Add debian/upstream/metadata
+  * trim trailing whitespace
+  * wrap-and-sort -ast
+  * Standards-Version: drop patch level -- compliance is only relevant to x.y.z
+  * Only enable wine32 and wine64 tests on i386 and amd64 respectively
+  * d/libassuan-mingw-w64-dev.lintian-overrides: repair overrides
+  * d/copyright: clean up, trim down
+  * d/gbp.conf: filter out doc/assuan.info on next import, it gets regenerated
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Sat, 30 Apr 2022 12:27:47 -0400
+
+libassuan (2.5.5-1) unstable; urgency=medium
+
+  [ Andreas Metzler ]
+  * libassuan pkg-config requires libgpg-error > 1.33. - Tighten
+    (build-)dependencies.
+  * Fix CI error by linking test binary explicitly against libgpg-error.
+    Closes: #982170
+
+  [ Eric Dorland ]
+  * New upstream release
+  * debhelper to v13
+  * Standards-Version to 4.6.0.0
+
+ -- Eric Dorland <eric@debian.org>  Thu, 19 Aug 2021 01:33:14 -0400
+
+libassuan (2.5.4-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update signing key from https://gnupg.org/signature_key.html
+  * Standards-Version to 4.5.1.0
+  * Drop upstreamed 0003-build-Use-CFLAGS-CPPFLAGS-LDFLAGS-_FOR_BUILD-for-hel.patch
+
+ -- Eric Dorland <eric@debian.org>  Fri, 15 Jan 2021 23:40:32 -0500
+
 libassuan (2.5.3-7.1pexip3) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion

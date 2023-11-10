@@ -13,5 +13,15 @@ libassuan-mingw-w64-dev: non-standard-dir-in-usr
 libassuan-mingw-w64-dev: executable-not-elf-or-script
 
 # cross-building for windows produces more weirdness than expected:
-libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file usr/i686-w64-mingw32/lib/libassuan.la
-libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file usr/x86_64-w64-mingw32/lib/libassuan.la
+libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file -L/usr/i686-w64-mingw32/lib /usr/i686-w64-mingw32/lib/libgpg-error.la -lws2_32 [usr/i686-w64-mingw32/lib/libassuan.la:20]
+libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file -L/usr/x86_64-w64-mingw32/lib /usr/x86_64-w64-mingw32/lib/libgpg-error.la -lws2_32 [usr/x86_64-w64-mingw32/lib/libassuan.la:20]
+
+# keep these overrides for the stable version of lintian used by the FTP team:
+libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file usr/i686-w64-mingw32/lib/libassuan.la (line 20) -L/usr/i686-w64-mingw32/lib /usr/i686-w64-mingw32/lib/libgpg-error.la -lws2_32
+libassuan-mingw-w64-dev: non-empty-dependency_libs-in-la-file usr/x86_64-w64-mingw32/lib/libassuan.la (line 20) -L/usr/x86_64-w64-mingw32/lib /usr/x86_64-w64-mingw32/lib/libgpg-error.la -lws2_32
+
+# Work around https://bugs.debian.org/1005326
+libassuan-mingw-w64-dev: no-code-sections [usr/i686-w64-mingw32/lib/libassuan.a]
+libassuan-mingw-w64-dev: no-code-sections [usr/i686-w64-mingw32/lib/libassuan.dll.a]
+libassuan-mingw-w64-dev: no-code-sections [usr/x86_64-w64-mingw32/lib/libassuan.a]
+libassuan-mingw-w64-dev: no-code-sections [usr/x86_64-w64-mingw32/lib/libassuan.dll.a]

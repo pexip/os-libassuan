@@ -31,6 +31,6 @@ export PKG_CONFIG_PATH="/usr/${ARCH}-w64-mingw32/lib/pkgconfig"
 extra_libs=(-lws2_32)
 
 # build a static windows binary around libassuan and run it:
-"$GCC" -pedantic -Wall -Werror -static -o test-run.exe debian/tests/simple-build.c $(pkg-config --cflags --static --libs libassuan) "${extra_libs[@]}"
+"$GCC" -pedantic -Wall -Werror -static -o test-run.exe debian/tests/simple-build.c $(pkg-config --cflags --static --libs libassuan gpg-error) "${extra_libs[@]}"
 "$WINE" ./test-run.exe
 rm -f ./test-run.exe

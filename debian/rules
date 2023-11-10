@@ -27,7 +27,6 @@ override_dh_auto_build-indep:
 	for cpu in i686 x86_64; do \
 	 mkdir -p build-$$cpu-w64-mingw32 && \
 	 cd build-$$cpu-w64-mingw32 && $(WIN_FLAGS) ../configure \
-	    --with-libgpg-error-prefix=/usr/$$cpu-w64-mingw32 \
 	    --prefix=/usr/$$cpu-w64-mingw32 \
 	    --enable-static \
 	    --host $$cpu-w64-mingw32 && \
