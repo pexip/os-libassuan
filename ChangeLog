@@ -1,3 +1,88 @@
+2021-03-22  Werner Koch  <wk@gnupg.org>
+
+	Release 2.5.5.
+	+ commit f8cfb565ee461946901ae3bc573abc0023d821b5
+
+
+2021-03-09  Werner Koch  <wk@gnupg.org>
+
+	Support Unicode when starting servers on Windows.
+	+ commit 9264c2710b64e565982d77410169a3253563a647
+	* src/assuan-socket.c (utf8_to_wchar): Rename to
+	(_assuan_utf8_to_wchar): this and give global scope.
+	* src/system-w32.c (__assuan_spawn): Use CreateProcessW.
+
+2020-11-17  NIIBE Yutaka  <gniibe@fsij.org>
+
+	m4: Update with newer autoconf constructs.
+	+ commit 05535d9863cfc4656554fa5fd8df2f4fbe695178
+	* src/libassuan.m4: Replace AC_HELP_STRING to AS_HELP_STRING.
+
+	build: Update to newer autoconf constructs.
+	+ commit 12fd96a61033a587482be150a0f955615083ad43
+	* configure.ac: Use AC_CONFIG_HEADERS instead of AM_CONFIG_HEADER.
+	Use AC_USE_SYSTEM_EXTENSIONS instead of AC_GNU_SOURCE.
+	Use AS_HELP_STRING instead of AC_HELP_STRING.
+	(AC_TYPE_SIGNAL): Remove.
+	(AC_DECL_SYS_SIGLIST): Remove.
+	* m4/Makefile.am (EXTRA_DIST): Update.
+	* m4/gnupg-pth.m4: Remove.
+	* m4/onceonly.m4: Remove.
+	* m4/socklen.m4: Update from gnulib.
+	* m4/libtool.m4: Update from libgpg-error.
+	* m4/gpg-error.m4: Update from libgpg-error.
+
+2020-11-12  Ben Kibbey  <bjk@luxsci.net>
+
+	Fix crash when logging.
+	+ commit 0dd8ffbd32fe62b8e4bf565cbd7a9272a2891d01
+	* src/assuan-logging.c (_assuan_log_control_channel): Use gpgrt_malloc.
+
+2020-10-23  Werner Koch  <wk@gnupg.org>
+
+	Post release updates.
+	+ commit 103c1e7f86de3f40c4f49e67b14376aad58ef81b
+
+
+	Release 2.5.4.
+	+ commit e368b400f276d5d9868832e7a652ab250dd57555
+
+
+2020-10-20  Werner Koch  <wk@gnupg.org>
+
+	Support Unicode socket file names under Windows.
+	+ commit 397316e9d0fb7c6a0daf163bf252edb996ffba46
+	* src/assuan-socket.c [W32]: Always use CreateFileW.  Drop support for
+	Windows-CE
+	(read_port_and_nonce): Use gpgrt_fopen.
+
+2020-02-25  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Use Requires.private and Libs.private.
+	+ commit 034e5450cdd5d886d9f333ef3872d4263b435dbb
+	* configure.ac (LIBASSUAN_CONFIG_LIBS): Remove NETLIBS.
+	* src/libassuan.pc.in: Distinguish static link.
+	* tests/Makefile.am: Don't need to link NETLIBS.
+
+2019-11-27  Werner Koch  <wk@gnupg.org>
+
+	w32: Fix bad-function-cast warning.
+	+ commit 16d3ffa15906037863110f4157ab84e13f579752
+	* src/w32-fd-t.inc.h (assuan_fd_from_posix_fd): Avoid compiler warning.
+
+2019-08-20  NIIBE Yutaka  <gniibe@fsij.org>
+
+	libassuan.pc: Fix to have -I for Cflags and -L for Libs.
+	+ commit 909133baad498ca395a01336f3b49d85322a1d12
+	* src/libassuan.pc.in (Cflags): Add -I flag.
+	(Libs): Add -L flag.
+
+2019-07-18  Daniel Kahn Gillmor  <dkg@fifthhorseman.net>
+
+	build: Use {CFLAGS,CPPFLAGS,LDFLAGS}_FOR_BUILD for helper programs.
+	+ commit 98d7c7ea3f37cf359f7e90192dedee7b1a791172
+	* src/Makefile.am: pass distinct build flags to CC_FOR_BUILD.
+
 2019-02-11  Werner Koch  <wk@gnupg.org>
 
 	Release 2.5.3.
