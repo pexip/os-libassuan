@@ -22,7 +22,7 @@
 # Process this file with autoconf to produce a configure script.
 
 
-AC_PREREQ([2.61])
+AC_PREREQ([2.69])
 min_automake_version="1.14"
 
 # To build a release you need to create a tag with the version number
@@ -31,9 +31,9 @@ min_automake_version="1.14"
 # commit and push so that the git magic is able to work.  See below
 # for the LT versions.
 m4_define([mym4_package],[libassuan])
-m4_define([mym4_major], [2])
-m4_define([mym4_minor], [5])
-m4_define([mym4_micro], [5])
+m4_define([mym4_major], [3])
+m4_define([mym4_minor], [0])
+m4_define([mym4_micro], [2])
 
 # To start a new development series, i.e a new major or minor number
 # you need to mark an arbitrary commit before the first beta release
@@ -51,7 +51,9 @@ m4_define([mym4_isbeta],       m4_argn(2, mym4_verslist))
 m4_define([mym4_version],      m4_argn(4, mym4_verslist))
 m4_define([mym4_revision],     m4_argn(7, mym4_verslist))
 m4_define([mym4_revision_dec], m4_argn(8, mym4_verslist))
+m4_define([mym4_commitid],     m4_argn(9, mym4_verslist))
 m4_esyscmd([echo ]mym4_version[>VERSION])
+m4_esyscmd([echo ]mym4_commitid[>>VERSION])
 
 AC_INIT([mym4_package],[mym4_version],[https://bugs.gnupg.org])
 
@@ -61,12 +63,12 @@ AC_INIT([mym4_package],[mym4_version],[https://bugs.gnupg.org])
 #   (Interfaces added:			AGE++)
 #   (Interfaces removed/changed:	AGE=0)
 #
-LIBASSUAN_LT_CURRENT=8
-LIBASSUAN_LT_AGE=8
-LIBASSUAN_LT_REVISION=5
+LIBASSUAN_LT_CURRENT=9
+LIBASSUAN_LT_AGE=0
+LIBASSUAN_LT_REVISION=2
 
 # If the API is changed in an incompatible way: increment the next counter.
-LIBASSUAN_CONFIG_API_VERSION=2
+LIBASSUAN_CONFIG_API_VERSION=3
 ##############################################
 
 AC_SUBST(LIBASSUAN_LT_CURRENT)
@@ -132,11 +134,7 @@ LT_LANG([Windows Resource])
 # For now we hardcode the use of version scripts.  It would be better
 # to write a test for this or even implement this within libtool.
 have_ld_version_script=no
-check_descriptor_passing=yes
 case "${host}" in
-    *-*-cygwin*)
-        check_descriptor_passing=no
-        ;;
     *-*-linux*)
         have_ld_version_script=yes
         ;;
@@ -145,19 +143,54 @@ case "${host}" in
         ;;
     *-apple-darwin*)
         AC_DEFINE(_XOPEN_SOURCE, 500, Activate POSIX interface on MacOS X)
-        AC_DEFINE(_DARWIN_C_SOURCE, 900000L,
+        AC_DEFINE(_DARWIN_C_SOURCE, 1,
                   Expose all libc features (__DARWIN_C_FULL))
         ;;
 esac
 
 AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT, test "$have_ld_version_script" = "yes")
 
+#
+# Specify how we support our local modification of libtool for Windows
+# 64-bit.  Options are:
+#
+# (1) apply: when appying patch fails, it results failure of entire build
+# (2) never: never apply the patch (no try)
+# (3) try: use patched if it goes well, use original if fails
+#
+AC_ARG_WITH([libtool-modification],
+  AS_HELP_STRING([--with-libtool-modification=apply|never|try],
+                 [how to handle libtool modification (default=never)]),
+                 build_libtool_modification=$withval,
+                 build_libtool_modification=never)
+
+#
+# Apply a patch (locally maintained one of ours) to libtool
+#
+case $host in
+  x86_64-*mingw32*)
+AC_CONFIG_COMMANDS([libtool-patch],[[
+  if test "$build_selection" = never; then
+    echo "patch not applied"
+  elif (mv -f libtool libtool.orig; \
+        sed -f $srcdir/build-aux/libtool-patch.sed libtool.orig >libtool); then
+    echo "applied successfully"
+  elif test "$build_selection" = try; then
+    mv -f libtool.orig libtool
+    echo "patch failed, thus, using original"
+  else
+    echo "patch failed"
+    as_fn_exit 1
+  fi
+]],[build_selection=$build_libtool_modification])
+  ;;
+  *)
+  ;;
+esac
+
 AH_TOP([
 #ifndef _ASSUAN_CONFIG_H_INCLUDED
 #define _ASSUAN_CONFIG_H_INCLUDED
-
-/* Enable gpg-error's strerror macro under W32CE.  */
-#define GPG_ERR_ENABLE_ERRNO_MACROS 1
 
 /* Provide the es_ macro for estream.  */
 #define GPGRT_ENABLE_ES_MACROS 1
@@ -189,21 +222,8 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 #AC_ARG_PROGRAM
 
-# We need to compile and run a program on the build machine.  A
-# comment in libgpg-error says that the AC_PROG_CC_FOR_BUILD macro in
-# the AC archive is broken for autoconf 2.57.  Given that there is no
-# newer version of that macro, we assume that it is also broken for
-# autoconf 2.61 and thus we use a simple but usually sufficient
-# approach.
-AC_MSG_CHECKING(for cc for build)
-if test "$cross_compiling" = "yes"; then
-  CC_FOR_BUILD="${CC_FOR_BUILD-cc}"
-else
-  CC_FOR_BUILD="${CC_FOR_BUILD-$CC}"
-fi
-AC_MSG_RESULT($CC_FOR_BUILD)
-AC_ARG_VAR(CC_FOR_BUILD,[build system C compiler])
-
+# We need to compile and run a program on the build machine.
+AX_CC_FOR_BUILD
 
 if test "$GCC" = yes; then
     CFLAGS="$CFLAGS -Wall -Wcast-align -Wshadow -Wstrict-prototypes"
@@ -226,7 +246,6 @@ fi
 have_dosish_system=no
 have_w32_system=no
 have_w64_system=no
-have_w32ce_system=no
 case "${host}" in
     *-linux*)
         if test "$GCC" = yes; then
@@ -237,11 +256,6 @@ case "${host}" in
         have_dosish_system=yes
         have_w32_system=yes
         have_w64_system=yes
-        ;;
-    *-mingw32ce*)
-        have_dosish_system=yes
-        have_w32_system=yes
-        have_w32ce_system=yes
         ;;
     *-mingw32*)
         have_dosish_system=yes
@@ -267,12 +281,9 @@ if test "$have_w32_system" = yes; then
       AC_DEFINE(HAVE_W64_SYSTEM,1,
                 [Defined if we run on a 64 bit W32 API based system])
     fi
-    if test "$have_w32ce_system" = yes; then
-       AC_DEFINE(HAVE_W32CE_SYSTEM,1,[Defined if we run on WindowsCE])
-    fi
+    AC_CHECK_HEADERS([winsock2.h])
 fi
 AM_CONDITIONAL(HAVE_W32_SYSTEM, test "$have_w32_system" = yes)
-AM_CONDITIONAL(HAVE_W32CE_SYSTEM, test "$have_w32ce_system" = yes)
 AM_CONDITIONAL(HAVE_W64_SYSTEM, test "$have_w64_system" = yes)
 
 
@@ -283,6 +294,9 @@ BUILD_REVISION="mym4_revision"
 AC_SUBST(BUILD_REVISION)
 AC_DEFINE_UNQUOTED(BUILD_REVISION, "$BUILD_REVISION",
                    [GIT commit id revision used to build this package])
+BUILD_COMMITID="mym4_commitid"
+AC_DEFINE_UNQUOTED(BUILD_COMMITID, "$BUILD_COMMITID",
+                   [Git commit id used to build this package])
 
 changequote(,)dnl
 BUILD_FILEVERSION=`echo "$VERSION" | sed 's/\([0-9.]*\).*/\1./;s/\./,/g'`
@@ -314,12 +328,8 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
 AC_SUBST(NETLIBS)
 
 if test "$have_w32_system" = yes; then
-   if test "$have_w32ce_system" = yes; then
-     NETLIBS="-lws2 $NETLIBS"
-   else
-     # FIXME: Check why we need to use ws2_32 and document that.
-     NETLIBS="-lws2_32 $NETLIBS"
-   fi
+   # FIXME: Check why we need to use ws2_32 and document that.
+   NETLIBS="-lws2_32 $NETLIBS"
 fi
 
 #
@@ -336,8 +346,7 @@ AC_SUBST(LIBASSUAN_CONFIG_API_VERSION)
 #
 # Checks for header files.
 #
-AC_HEADER_STDC
-AC_CHECK_HEADERS([string.h locale.h sys/uio.h stdint.h inttypes.h \
+AC_CHECK_HEADERS([locale.h sys/uio.h stdint.h inttypes.h \
                   sys/types.h sys/stat.h unistd.h sys/time.h fcntl.h \
                   sys/select.h ucred.h sys/ucred.h])
 AC_TYPE_UINTPTR_T
@@ -350,8 +359,19 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-gl_HEADER_SYS_SOCKET
 gl_TYPE_SOCKLEN_T
+
+# Windows has different method for "descriptor passing" (actually,
+# it's file handle passing), so, don't check the feature.
+check_descriptor_passing=yes
+case "${host}" in
+    *-*-cygwin*)
+        check_descriptor_passing=no
+        ;;
+    *-mingw32*)
+        check_descriptor_passing=no
+        ;;
+esac
 
 if test $check_descriptor_passing != yes; then
     use_descriptor_passing=no
@@ -385,6 +405,8 @@ AM_CONDITIONAL(USE_DESCRIPTOR_PASSING, test "$use_descriptor_passing" = "yes")
 
 # Checking for libgpg-error.
 AM_PATH_GPG_ERROR(1.17,, AC_MSG_ERROR([libgpg-error was not found]))
+AM_CONDITIONAL(USE_GPGRT_CONFIG, [test -n "$GPGRT_CONFIG" \
+                                  -a "$ac_cv_path_GPG_ERROR_CONFIG" = no])
 
 #
 # Checks for library functions.
@@ -431,7 +453,6 @@ fi
 
 
 AC_REPLACE_FUNCS(isascii)
-AC_REPLACE_FUNCS(putc_unlocked)
 AC_REPLACE_FUNCS(memrchr)
 AC_REPLACE_FUNCS(stpcpy)
 AC_CHECK_HEADERS(unistd.h)
@@ -452,6 +473,11 @@ AC_CHECK_FUNCS([getpeerucred])
 
 # FreeBSD
 AC_CHECK_FUNCS([getpeereid])
+AC_CHECK_MEMBER(struct xucred.cr_pid,
+		[AC_DEFINE(HAVE_XUCRED_CR_PID, 1,
+		 Define if struct xucred contains the cr_pid member.)],
+		 [], [#include <sys/ucred.h>
+#include <sys/ucred.h> ])
 
 
 #

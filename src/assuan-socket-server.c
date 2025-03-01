@@ -135,14 +135,25 @@ accept_connection_bottom (assuan_context_t ctx)
       {
         ctx->peercred_valid = 1;
         ctx->peercred.pid = ASSUAN_INVALID_PID;
+#if defined (HAVE_XUCRED_CR_PID)
+          {
+            struct xucred cr;
+            socklen_t len = sizeof (struct xucred);
+
+            if (!getsockopt (fd, SOL_LOCAL, LOCAL_PEERCRED, &cr, &len))
+              ctx->peercred.pid = cr.cr_pid;
+          }
+#endif
       }
   }
 #endif
 
+#if !defined(HAVE_W32_SYSTEM)
   /* This overrides any already set PID if the function returns
      a valid one. */
   if (ctx->peercred_valid && ctx->peercred.pid != ASSUAN_INVALID_PID)
     ctx->pid = ctx->peercred.pid;
+#endif
 
   ctx->inbound.fd = fd;
   ctx->inbound.eof = 0;
@@ -201,6 +212,7 @@ assuan_init_socket_server (assuan_context_t ctx, assuan_fd_t fd,
   TRACE_BEG2 (ctx, ASSUAN_LOG_CTX, "assuan_init_socket_server", ctx,
 	      "fd=0x%x, flags=0x%x", fd, flags);
 
+  ctx->flags.is_socket = 1;
   rc = _assuan_register_std_commands (ctx);
   if (rc)
     return TRACE_ERR (rc);
@@ -210,7 +222,7 @@ assuan_init_socket_server (assuan_context_t ctx, assuan_fd_t fd,
   ctx->engine.writefnc = _assuan_simple_write;
   ctx->engine.sendfd = NULL;
   ctx->engine.receivefd = NULL;
-  ctx->is_server = 1;
+  ctx->flags.is_server = 1;
   if (flags & ASSUAN_SOCKET_SERVER_ACCEPTED)
     /* We want a second accept to indicate EOF. */
     ctx->max_accepts = 1;
@@ -237,8 +249,12 @@ assuan_init_socket_server (assuan_context_t ctx, assuan_fd_t fd,
                          : accept_connection);
   ctx->finish_handler = _assuan_server_finish;
 
+#ifdef HAVE_W32_SYSTEM
+  ctx->engine.receivefd = w32_fdpass_recv;
+#else
   if (flags & ASSUAN_SOCKET_SERVER_FDPASSING)
     _assuan_init_uds_io (ctx);
+#endif
 
   rc = _assuan_register_std_commands (ctx);
   if (rc)

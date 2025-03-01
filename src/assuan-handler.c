@@ -39,7 +39,7 @@ static int my_strcasecmp (const char *a, const char *b);
 
 
 #define PROCESS_DONE(ctx, rc) \
-  ((ctx)->in_process_next ? assuan_process_done ((ctx), (rc)) : (rc))
+  ((ctx)->flags.in_process_next ? assuan_process_done ((ctx), (rc)) : (rc))
 
 static gpg_error_t
 dummy_handler (assuan_context_t ctx, char *line)
@@ -147,7 +147,7 @@ std_handler_bye (assuan_context_t ctx, char *line)
   assuan_close_input_fd (ctx);
   assuan_close_output_fd (ctx);
   /* pretty simple :-) */
-  ctx->process_complete = 1;
+  ctx->flags.process_complete = 1;
   return PROCESS_DONE (ctx, 0);
 }
 
@@ -311,16 +311,6 @@ std_handler_input (assuan_context_t ctx, char *line)
   if (rc)
     return PROCESS_DONE (ctx, rc);
 
-#ifdef HAVE_W32CE_SYSTEM
-  oldfd = fd;
-  fd = _assuan_w32ce_finish_pipe ((int)fd, 0);
-  if (fd == INVALID_HANDLE_VALUE)
-    return PROCESS_DONE (ctx, set_error (ctx, GPG_ERR_ASS_PARAMETER,
-					 "rvid conversion failed"));
-  TRACE2 (ctx, ASSUAN_LOG_SYSIO, "std_handler_input", ctx,
-	  "turned RVID 0x%x into handle 0x%x", oldfd, fd);
-#endif
-
   if (ctx->input_notify_fnc)
     {
       oldfd = ctx->input_fd;
@@ -352,16 +342,6 @@ std_handler_output (assuan_context_t ctx, char *line)
   if (rc)
     return PROCESS_DONE (ctx, rc);
 
-#ifdef HAVE_W32CE_SYSTEM
-  oldfd = fd;
-  fd = _assuan_w32ce_finish_pipe ((int)fd, 1);
-  if (fd == INVALID_HANDLE_VALUE)
-    return PROCESS_DONE (ctx, set_error (ctx, gpg_err_code_from_syserror (),
-					 "rvid conversion failed"));
-  TRACE2 (ctx, ASSUAN_LOG_SYSIO, "std_handler_output", ctx,
-	  "turned RVID 0x%x into handle 0x%x", oldfd, fd);
-#endif
-
   if (ctx->output_notify_fnc)
     {
       oldfd = ctx->output_fd;
@@ -375,6 +355,41 @@ std_handler_output (assuan_context_t ctx, char *line)
   return PROCESS_DONE (ctx, rc);
 }
 
+
+#ifdef HAVE_W32_SYSTEM
+/*
+ * The command used by a client to send an FD.  That is, from the
+ * viewpoint of handling this command, it is to _receive_ a file
+ * handle.
+ */
+static const char w32_help_sendfd[] =
+  "SENDFD <N>\n"
+  "\n"
+  "Used by a client to pass a file HANDLE to the server.\n"
+  "The server opens <N> as a local file HANDLE.";
+static gpg_error_t
+w32_handler_sendfd (assuan_context_t ctx, char *line)
+{
+  gpg_error_t err = 0;
+  char *endp;
+  intptr_t file_handle;
+
+#if HAVE_W64_SYSTEM
+  file_handle = strtoull (line, &endp, 16);
+#elif HAVE_W32_SYSTEM
+  file_handle = strtoul (line, &endp, 16);
+#endif
+
+  if (*endp)
+    {
+      err = set_error (ctx, GPG_ERR_ASS_SYNTAX, "hex number required");
+      return PROCESS_DONE (ctx, err);
+    }
+
+  ctx->uds.pendingfds[ctx->uds.pendingfdscount++] = (assuan_fd_t)file_handle;
+  return PROCESS_DONE (ctx, err);
+}
+#endif
 
 /* This is a table with the standard commands and handler for them.
    The table is used to initialize a new context and associate strings
@@ -396,6 +411,9 @@ static struct {
 
   { "INPUT",  std_handler_input, std_help_input, 0 },
   { "OUTPUT", std_handler_output, std_help_output, 0 },
+#if HAVE_W32_SYSTEM
+  { "SENDFD",  w32_handler_sendfd, w32_help_sendfd, 1 },
+#endif
   { } };
 
 
@@ -683,13 +701,13 @@ dispatch_command (assuan_context_t ctx, char *line, int linelen)
 gpg_error_t
 assuan_process_done (assuan_context_t ctx, gpg_error_t rc)
 {
-  if (!ctx->in_command)
+  if (!ctx->flags.in_command)
     return _assuan_error (ctx, GPG_ERR_ASS_GENERAL);
 
   if (ctx->flags.force_close)
-    ctx->process_complete = 1;
+    ctx->flags.process_complete = 1;
 
-  ctx->in_command = 0;
+  ctx->flags.in_command = 0;
 
   /* Check for data write errors.  */
   if (ctx->outbound.data.fp)
@@ -711,7 +729,7 @@ assuan_process_done (assuan_context_t ctx, gpg_error_t rc)
   /* Error handling.  */
   if (!rc)
     {
-      if (ctx->process_complete)
+      if (ctx->flags.process_complete)
 	{
 	  /* No error checking because the peer may have already
 	     disconnect. */
@@ -769,7 +787,7 @@ process_next (assuan_context_t ctx)
     return 0;
   if (gpg_err_code (rc) == GPG_ERR_EOF)
     {
-      ctx->process_complete = 1;
+      ctx->flags.process_complete = 1;
       return 0;
     }
   if (rc)
@@ -784,18 +802,18 @@ process_next (assuan_context_t ctx)
      in a command, it can only be the response to an INQUIRE
      reply.  */
 
-  if (!ctx->in_command)
+  if (!ctx->flags.in_command)
     {
-      ctx->in_command = 1;
+      ctx->flags.in_command = 1;
 
       ctx->outbound.data.error = 0;
       ctx->outbound.data.linelen = 0;
       /* Dispatch command and return reply.  */
-      ctx->in_process_next = 1;
+      ctx->flags.in_process_next = 1;
       rc = dispatch_command (ctx, ctx->inbound.line, ctx->inbound.linelen);
-      ctx->in_process_next = 0;
+      ctx->flags.in_process_next = 0;
     }
-  else if (ctx->in_inquire)
+  else if (ctx->flags.in_inquire)
     {
       /* FIXME: Pick up the continuation.  */
       rc = _assuan_inquire_ext_cb (ctx);
@@ -827,15 +845,15 @@ assuan_process_next (assuan_context_t ctx, int *done)
 
   if (done)
     *done = 0;
-  ctx->process_complete = 0;
+  ctx->flags.process_complete = 0;
   do
     {
       rc = process_next (ctx);
     }
-  while (!rc && !ctx->process_complete && assuan_pending_line (ctx));
+  while (!rc && !ctx->flags.process_complete && assuan_pending_line (ctx));
 
   if (done)
-    *done = !!ctx->process_complete;
+    *done = !!ctx->flags.process_complete;
 
   return rc;
 }
@@ -847,7 +865,7 @@ process_request (assuan_context_t ctx)
 {
   gpg_error_t rc;
 
-  if (ctx->in_inquire)
+  if (ctx->flags.in_inquire)
     return _assuan_error (ctx, GPG_ERR_ASS_NESTED_COMMANDS);
 
   do
@@ -857,7 +875,7 @@ process_request (assuan_context_t ctx)
   while (_assuan_error_is_eagain (ctx, rc));
   if (gpg_err_code (rc) == GPG_ERR_EOF)
     {
-      ctx->process_complete = 1;
+      ctx->flags.process_complete = 1;
       return 0;
     }
   if (rc)
@@ -865,7 +883,7 @@ process_request (assuan_context_t ctx)
   if (*ctx->inbound.line == '#' || !ctx->inbound.linelen)
     return 0; /* comment line - ignore */
 
-  ctx->in_command = 1;
+  ctx->flags.in_command = 1;
   ctx->outbound.data.error = 0;
   ctx->outbound.data.linelen = 0;
   /* dispatch command and return reply */
@@ -890,10 +908,10 @@ assuan_process (assuan_context_t ctx)
 {
   gpg_error_t rc;
 
-  ctx->process_complete = 0;
+  ctx->flags.process_complete = 0;
   do {
     rc = process_request (ctx);
-  } while (!rc && !ctx->process_complete);
+  } while (!rc && !ctx->flags.process_complete);
 
   return rc;
 }
@@ -935,9 +953,7 @@ assuan_get_active_fds (assuan_context_t ctx, int what,
       if (ctx->outbound.fd != ASSUAN_INVALID_FD)
         fdarray[n++] = ctx->outbound.fd;
       if (ctx->outbound.data.fp)
-#if defined(HAVE_W32CE_SYSTEM)
-        fdarray[n++] = (void*)fileno (ctx->outbound.data.fp);
-#elif defined(HAVE_W32_SYSTEM)
+#if defined(HAVE_W32_SYSTEM)
         fdarray[n++] = (void*)_get_osfhandle (fileno (ctx->outbound.data.fp));
 #else
         fdarray[n++] = fileno (ctx->outbound.data.fp);

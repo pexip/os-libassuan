@@ -104,7 +104,31 @@ initial_handshake (assuan_context_t ctx)
   if (err)
     TRACE1 (ctx, ASSUAN_LOG_SYSIO, "initial_handshake", ctx,
 	    "can't connect server: %s", gpg_strerror (err));
-  else if (response != ASSUAN_RESPONSE_OK)
+  else if (response == ASSUAN_RESPONSE_OK)
+    {
+#if defined(HAVE_W32_SYSTEM)
+      const char *line = ctx->inbound.line + off;
+      int process_id = -1;
+
+      /* Parse the message: OK ..., process %i */
+      line = strchr (line, ',');
+      if (line)
+        {
+          line = strchr (line + 1, ' ');
+          if (line)
+            {
+              line = strchr (line + 1, ' ');
+              if (line)
+                process_id = atoi (line + 1);
+            }
+        }
+      if (process_id != -1)
+        ctx->process_id = process_id;
+#else
+        ;
+#endif
+    }
+  else
     {
       TRACE1 (ctx, ASSUAN_LOG_SYSIO, "initial_handshake", ctx,
 	      "can't connect server: `%s'", ctx->inbound.line);
@@ -160,7 +184,7 @@ pipe_connect (assuan_context_t ctx,
   gpg_error_t rc;
   assuan_fd_t rp[2];
   assuan_fd_t wp[2];
-  pid_t pid;
+  assuan_pid_t pid;
   int res;
   struct at_pipe_fork atp;
   unsigned int spawn_flags;
@@ -209,14 +233,18 @@ pipe_connect (assuan_context_t ctx,
   ctx->engine.release = _assuan_client_release;
   ctx->engine.readfnc = _assuan_simple_read;
   ctx->engine.writefnc = _assuan_simple_write;
+#ifdef HAVE_W32_SYSTEM
+  ctx->engine.sendfd = w32_fdpass_send;
+#else
   ctx->engine.sendfd = NULL;
+#endif
   ctx->engine.receivefd = NULL;
   ctx->finish_handler = _assuan_client_finish;
   ctx->max_accepts = 1;
   ctx->accept_handler = NULL;
   ctx->inbound.fd  = rp[0];  /* Our inbound is read end of read pipe. */
   ctx->outbound.fd = wp[1];  /* Our outbound is write end of write pipe. */
-  ctx->pid = pid;
+  ctx->server_proc = pid;
 
   rc = initial_handshake (ctx);
   if (rc)
@@ -413,17 +441,50 @@ assuan_pipe_connect (assuan_context_t ctx,
   TRACE2 (ctx, ASSUAN_LOG_CTX, "assuan_pipe_connect", ctx,
 	  "name=%s, flags=0x%x", name ? name : "(null)", flags);
 
+#ifndef HAVE_W32_SYSTEM
   if (flags & ASSUAN_PIPE_CONNECT_FDPASSING)
-    {
-#ifdef HAVE_W32_SYSTEM
-      return _assuan_error (ctx, GPG_ERR_NOT_IMPLEMENTED);
-#else
-      return socketpair_connect (ctx, name, argv, fd_child_list,
-                                 atfork, atforkvalue);
-#endif
-    }
+    return socketpair_connect (ctx, name, argv, fd_child_list,
+			       atfork, atforkvalue);
   else
+#endif
     return pipe_connect (ctx, name, argv, fd_child_list, atfork, atforkvalue,
                          flags);
 }
 
+gpg_error_t
+assuan_pipe_wait_server_termination (assuan_context_t ctx, int *status,
+                                     int no_hang)
+{
+  assuan_pid_t pid;
+
+  if (ctx->server_proc == -1)
+    return _assuan_error (ctx, GPG_ERR_NO_SERVICE);
+
+  pid = _assuan_waitpid (ctx, ctx->server_proc, 0, status, no_hang);
+  if (pid == -1)
+    return _assuan_error (ctx, gpg_err_code_from_syserror ());
+  else if (pid == 0)
+    return _assuan_error (ctx, GPG_ERR_TIMEOUT);
+
+  /* We did wait on the process already, so, not any more.  */
+  ctx->flags.no_waitpid = 1;
+  return 0;
+}
+
+gpg_error_t
+assuan_pipe_kill_server (assuan_context_t ctx)
+{
+  if (ctx->server_proc == -1)
+    ; /* No pid available can't send a kill. */
+  else
+    {
+      _assuan_pre_syscall ();
+#ifdef HAVE_W32_SYSTEM
+      TerminateProcess ((HANDLE)ctx->server_proc, 1);
+#else
+      kill (ctx->server_proc, SIGINT);
+#endif
+      _assuan_post_syscall ();
+    }
+  return 0;
+}

@@ -149,7 +149,7 @@ __assuan_close (assuan_context_t ctx, assuan_fd_t fd)
 {
   int rc = closesocket (HANDLE2SOCKET(fd));
   if (rc)
-    gpg_err_set_errno ( _assuan_sock_wsa2errno (WSAGetLastError ()) );
+    gpg_err_set_errno ( _assuan_sock_wsa2errno (ctx, WSAGetLastError ()) );
   if (rc && WSAGetLastError () == WSAENOTSOCK)
     {
       rc = CloseHandle (fd);
@@ -162,33 +162,85 @@ __assuan_close (assuan_context_t ctx, assuan_fd_t fd)
 
 
 
-/* Return true if HD refers to a socket.  */
-static int
-is_socket (HANDLE hd)
+/* Get a file HANDLE for other end to send, from MY_HANDLE.  */
+static gpg_error_t
+get_file_handle (assuan_context_t ctx, assuan_fd_t my_handle,
+                 int process_id, HANDLE *r_handle)
 {
-  /* We need to figure out whether we are working on a socket or on a
-     handle.  A trivial way would be to check for the return code of
-     recv and see if it is WSAENOTSOCK.  However the recv may block
-     after the server process died and thus the destroy_reader will
-     hang.  Another option is to use getsockopt to test whether it is
-     a socket.  The bug here is that once a socket with a certain
-     values has been opened, closed and later a CreatePipe returned
-     the same value (i.e. handle), getsockopt still believes it is a
-     socket.  What we do now is to use a combination of GetFileType
-     and GetNamedPipeInfo.  The specs say that the latter may be used
-     on anonymous pipes as well.  Note that there are claims that
-     since winsocket version 2 ReadFile may be used on a socket but
-     only if it is supported by the service provider.  Tests on a
-     stock XP using a local TCP socket show that it does not work.  */
-  DWORD dummyflags, dummyoutsize, dummyinsize, dummyinst;
-  if (GetFileType (hd) == FILE_TYPE_PIPE
-      && !GetNamedPipeInfo (hd, &dummyflags, &dummyoutsize,
-                            &dummyinsize, &dummyinst))
-    return 1; /* Function failed; thus we assume it is a socket.  */
-  else
-    return 0; /* Success; this is not a socket.  */
+  HANDLE prochandle, newhandle;
+
+  prochandle = OpenProcess (PROCESS_DUP_HANDLE, FALSE, process_id);
+  if (!prochandle)
+    {
+      TRACE1 (ctx, ASSUAN_LOG_SYSIO, "assuan_sendfd", ctx,
+	      "OpenProcess failed: %s", _assuan_w32_strerror (ctx, -1));
+      return _assuan_error (ctx, gpg_err_code_from_errno (EIO));
+    }
+
+  if (!DuplicateHandle (GetCurrentProcess (), my_handle, prochandle, &newhandle,
+                        0, TRUE, DUPLICATE_SAME_ACCESS))
+    {
+      TRACE1 (ctx, ASSUAN_LOG_SYSIO, "assuan_sendfd", ctx,
+	      "DuplicateHandle failed: %s", _assuan_w32_strerror (ctx, -1));
+      CloseHandle (prochandle);
+      return _assuan_error (ctx, GPG_ERR_ASS_PARAMETER);
+    }
+  CloseHandle (prochandle);
+  *r_handle = newhandle;
+  return 0;
 }
 
+
+/* Send an FD (which means Windows HANDLE) to the peer.  */
+gpg_error_t
+w32_fdpass_send (assuan_context_t ctx, assuan_fd_t fd)
+{
+  char fdpass_msg[256];
+  int res;
+  HANDLE file_handle = INVALID_HANDLE_VALUE;
+  gpg_error_t err;
+
+  if (ctx->process_id == -1)
+    return _assuan_error (ctx, GPG_ERR_SERVER_FAILED);
+
+  err = get_file_handle (ctx, fd, ctx->process_id, &file_handle);
+  if (err)
+    return err;
+
+  res = snprintf (fdpass_msg, sizeof (fdpass_msg), "SENDFD %p", file_handle);
+  if (res < 0)
+    {
+      CloseHandle (file_handle);
+      return _assuan_error (ctx, GPG_ERR_ASS_PARAMETER);
+    }
+
+  err = assuan_transact (ctx, fdpass_msg, NULL, NULL, NULL, NULL, NULL, NULL);
+  return err;
+}
+
+
+/* Receive a HANDLE from the peer and turn it into an FD.  */
+gpg_error_t
+w32_fdpass_recv (assuan_context_t ctx, assuan_fd_t *fd)
+{
+  int i;
+
+  if (!ctx->uds.pendingfdscount)
+    {
+      TRACE0 (ctx, ASSUAN_LOG_SYSIO, "w32_receivefd", ctx,
+	      "no pending file descriptors");
+      return _assuan_error (ctx, GPG_ERR_ASS_GENERAL);
+    }
+
+  *fd = ctx->uds.pendingfds[0];
+  for (i=1; i < ctx->uds.pendingfdscount; i++)
+    ctx->uds.pendingfds[i-1] = ctx->uds.pendingfds[i];
+  ctx->uds.pendingfdscount--;
+
+  TRACE1 (ctx, ASSUAN_LOG_SYSIO, "w32_fdpass_recv", ctx,
+          "received fd: %p", ctx->uds.pendingfds[0]);
+  return 0;
+}
 
 ssize_t
 __assuan_read (assuan_context_t ctx, assuan_fd_t fd, void *buffer, size_t size)
@@ -196,7 +248,7 @@ __assuan_read (assuan_context_t ctx, assuan_fd_t fd, void *buffer, size_t size)
   int res;
   int ec = 0;
 
-  if (is_socket (fd))
+  if (ctx->flags.is_socket)
     {
       int tries = 3;
 
@@ -265,7 +317,7 @@ __assuan_write (assuan_context_t ctx, assuan_fd_t fd, const void *buffer,
   int res;
   int ec = 0;
 
-  if (is_socket (fd))
+  if (ctx->flags.is_socket)
     {
       int tries = 3;
 
@@ -404,7 +456,7 @@ build_w32_commandline (assuan_context_t ctx, const char * const *argv,
 
 
 int
-__assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
+__assuan_spawn (assuan_context_t ctx, assuan_pid_t *r_pid, const char *name,
 		const char **argv,
 		assuan_fd_t fd_in, assuan_fd_t fd_out,
 		assuan_fd_t *fd_child_list,
@@ -532,7 +584,7 @@ __assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
   /*                       pi.hProcess, pi.hThread, */
   /*                       (int) pi.dwProcessId, (int) pi.dwThreadId); */
 
-  *r_pid = (pid_t) pi.hProcess;
+  *r_pid = (assuan_pid_t) pi.hProcess;
 
   /* No need to modify peer process, as we don't change the handle
      names.  However this also means we are not safe, as we inherit
@@ -547,12 +599,34 @@ __assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
 
 /* FIXME: Add some sort of waitpid function that covers GPGME and
    gpg-agent's use of assuan.  */
-pid_t
-__assuan_waitpid (assuan_context_t ctx, pid_t pid, int nowait,
+assuan_pid_t
+__assuan_waitpid (assuan_context_t ctx, assuan_pid_t pid, int nowait,
 		  int *status, int options)
 {
-  CloseHandle ((HANDLE) pid);
-  return 0;
+  int code;
+  DWORD exit_code;
+
+  (void)ctx;
+
+  if (nowait)
+    return 0;
+
+  code = WaitForSingleObject ((HANDLE)pid, options? 0: INFINITE);
+
+  if (code == WAIT_OBJECT_0)
+    {
+      if (status)
+        {
+          GetExitCodeProcess ((HANDLE)pid, &exit_code);
+          *status = (int)exit_code;
+        }
+      CloseHandle ((HANDLE)pid);
+      return pid;
+    }
+  else if (code == WAIT_TIMEOUT)
+    return 0;
+  else
+    return -1;
 }
 
 
@@ -566,27 +640,27 @@ __assuan_socketpair (assuan_context_t ctx, int namespace, int style,
 }
 
 
-int
+assuan_fd_t
 __assuan_socket (assuan_context_t ctx, int domain, int type, int proto)
 {
-  int res;
+  assuan_fd_t res;
 
-  res = socket (domain, type, proto);
-  if (res == -1)
-    gpg_err_set_errno (_assuan_sock_wsa2errno (WSAGetLastError ()));
+  res = SOCKET2HANDLE (socket (domain, type, proto));
+  if (res == SOCKET2HANDLE (INVALID_SOCKET))
+    gpg_err_set_errno (_assuan_sock_wsa2errno (ctx, WSAGetLastError ()));
   return res;
 }
 
 
 int
-__assuan_connect (assuan_context_t ctx, int sock, struct sockaddr *addr,
-		  socklen_t length)
+__assuan_connect (assuan_context_t ctx, assuan_fd_t sock,
+                  struct sockaddr *addr, socklen_t length)
 {
   int res;
 
-  res = connect (sock, addr, length);
+  res = connect (HANDLE2SOCKET (sock), addr, length);
   if (res < 0)
-    gpg_err_set_errno (_assuan_sock_wsa2errno (WSAGetLastError ()));
+    gpg_err_set_errno (_assuan_sock_wsa2errno (ctx, WSAGetLastError ()));
   return res;
 }
 
@@ -594,7 +668,7 @@ __assuan_connect (assuan_context_t ctx, int sock, struct sockaddr *addr,
 /* The default system hooks for assuan contexts.  */
 struct assuan_system_hooks _assuan_system_hooks =
   {
-    ASSUAN_SYSTEM_HOOKS_VERSION,
+    0,
     __assuan_usleep,
     __assuan_pipe,
     __assuan_close,

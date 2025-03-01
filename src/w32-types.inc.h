@@ -23,8 +23,19 @@
 typedef void *assuan_msghdr_t;
 
 #ifdef _MSC_VER
+# ifdef _WIN64
+  typedef long long ssize_t;
+  typedef long long pid_t;
+#else
   typedef long ssize_t;
   typedef int  pid_t;
+# endif
+#endif
+
+#ifdef _WIN64
+ typedef unsigned long long assuan_pid_t;
+#else
+ typedef unsigned long assuan_pid_t;
 #endif
 
 ##EOF##

@@ -76,6 +76,8 @@ assuan_set_flag (assuan_context_t ctx, assuan_flag_t flag, int value)
 
     case ASSUAN_CONFIDENTIAL:
       ctx->flags.confidential = value;
+      if (ctx->flags.in_inq_cb && value)
+        ctx->flags.confidential_inquiry = value;
       break;
 
     case ASSUAN_NO_FIXSIGNALS:
@@ -147,10 +149,12 @@ assuan_begin_confidential (assuan_context_t ctx)
 }
 
 
-/* Same as assuan_set_flag (ctx, ASSUAN_CONFIDENTIAL, 0).  */
+/* Same as assuan_set_flag (ctx, ASSUAN_CONFIDENTIAL, 0) but first
+ * flushes pending data.  */
 void
 assuan_end_confidential (assuan_context_t ctx)
 {
+  _assuan_cookie_write_flush (ctx);
   assuan_set_flag (ctx, ASSUAN_CONFIDENTIAL, 0);
 }
 
@@ -200,15 +204,35 @@ assuan_set_error (assuan_context_t ctx, gpg_error_t err, const char *text)
 
 
 /* Return the PID of the peer or ASSUAN_INVALID_PID if not known.
-   This function works in some situations where assuan_get_ucred
+   This function works in some situations where assuan_get_peercred
    fails. */
 pid_t
 assuan_get_pid (assuan_context_t ctx)
 {
+#if defined(HAVE_W32_SYSTEM)
+  TRACE1 (ctx, ASSUAN_LOG_CTX, "assuan_get_pid", ctx,
+	  "pid=%i", ctx ? ctx->process_id : -1);
+#else
   TRACE1 (ctx, ASSUAN_LOG_CTX, "assuan_get_pid", ctx,
 	  "pid=%i", ctx ? ctx->pid : -1);
+#endif
 
-  return (ctx && ctx->pid) ? ctx->pid : ASSUAN_INVALID_PID;
+  if (!ctx)
+    return ASSUAN_INVALID_PID;
+
+  if (ctx->flags.is_server)
+#if defined(HAVE_W32_SYSTEM)
+    return ctx->process_id;
+#else
+    return ctx->pid;
+#endif
+  else
+    /*
+     * This use case of getting internal process reference by the
+     * application should be fixed.  It's here, only for backward
+     * compatibility.
+     */
+    return ctx->server_proc;
 }
 
 

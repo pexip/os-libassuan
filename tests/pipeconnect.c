@@ -33,6 +33,9 @@
 #include <assert.h>
 #include <errno.h>
 
+#ifdef HAVE_W32_SYSTEM
+#include <fcntl.h>
+#endif
 #include "../src/assuan.h"
 #include "common.h"
 
@@ -55,19 +58,37 @@ cmd_echo (assuan_context_t ctx, char *line)
 static gpg_error_t
 cmd_cat (assuan_context_t ctx, char *line)
 {
-  assuan_fd_t fd, fdout;
+#ifdef HAVE_W32_SYSTEM
+  assuan_fd_t assuan_fdin, assuan_fdout;
+#endif
+  int fd, fdout;
   int c;
   FILE *fp, *fpout;
   int nbytes;
 
   log_info ("got CAT command (%s)\n", line);
 
+#ifdef HAVE_W32_SYSTEM
+  assuan_fdin = assuan_get_input_fd (ctx);
+  if (assuan_fdin == ASSUAN_INVALID_FD)
+    return gpg_error (GPG_ERR_ASS_NO_INPUT);
+  assuan_fdout = assuan_get_output_fd (ctx);
+  if (assuan_fdout == ASSUAN_INVALID_FD)
+    return gpg_error (GPG_ERR_ASS_NO_OUTPUT);
+  fd = _open_osfhandle ((intptr_t)assuan_fdin, _O_RDONLY);
+  if (fd < 0)
+    return gpg_error (GPG_ERR_ASS_NO_INPUT);
+  fdout = _open_osfhandle ((intptr_t)assuan_fdout, _O_WRONLY);
+  if (fdout < 0)
+    return gpg_error (GPG_ERR_ASS_NO_OUTPUT);
+#else
   fd = assuan_get_input_fd (ctx);
   if (fd == ASSUAN_INVALID_FD)
     return gpg_error (GPG_ERR_ASS_NO_INPUT);
   fdout = assuan_get_output_fd (ctx);
   if (fdout == ASSUAN_INVALID_FD)
     return gpg_error (GPG_ERR_ASS_NO_OUTPUT);
+#endif
   fp = fdopen (fd, "r");
   if (!fp)
     {
@@ -198,7 +219,7 @@ run_client (const char *servername)
   assuan_fd_t no_close_fds[2];
   const char *arglist[5];
 
-  no_close_fds[0] = fileno (stderr);
+  no_close_fds[0] = assuan_fd_from_posix_fd (fileno (stderr));
   no_close_fds[1] = ASSUAN_INVALID_FD;
 
   arglist[0] = servername;
@@ -247,61 +268,11 @@ run_client (const char *servername)
 static void
 parse_std_file_handles (int *argcp, char ***argvp)
 {
-#ifdef HAVE_W32CE_SYSTEM
-  int argc = *argcp;
-  char **argv = *argvp;
-  const char *s;
-  assuan_fd_t fd;
-  int i;
-  int fixup = 0;
-
-  if (!argc)
-    return;
-
-  for (argc--, argv++; argc; argc--, argv++)
-    {
-      s = *argv;
-      if (*s == '-' && s[1] == '&' && s[2] == 'S'
-          && (s[3] == '0' || s[3] == '1' || s[3] == '2')
-          && s[4] == '=' 
-          && (strchr ("-01234567890", s[5]) || !strcmp (s+5, "null")))
-        {
-          if (s[5] == 'n')
-            fd = ASSUAN_INVALID_FD;
-          else
-            fd = _assuan_w32ce_finish_pipe (atoi (s+5), s[3] != '0');
-          switch (s[3] - '0')
-            {
-            case 0: my_stdin = fd; break;
-            case 1: my_stdout = fd; break;
-            case 2: my_stderr = fd; break;
-            }
-
-          fixup++;
-        }
-      else
-        break;
-    }
-
-  if (fixup)
-    {
-      argc = *argcp;
-      argc -= fixup;
-      *argcp = argc;
-
-      argv = *argvp;
-      for (i=1; i < argc; i++)
-        argv[i] = argv[i + fixup];
-      for (; i < argc + fixup; i++)
-        argv[i] = NULL;
-    }
-#else
   (void)argcp;
   (void)argvp;
-  my_stdin = 0;
-  my_stdout = 1;
-  my_stderr = 2;
-#endif
+  my_stdin = assuan_fd_from_posix_fd (0);
+  my_stdout = assuan_fd_from_posix_fd (1);
+  my_stderr = assuan_fd_from_posix_fd (2);
 }
 
 

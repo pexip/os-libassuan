@@ -1,0 +1,30 @@
+AUTHORS:
+  'override-license': FSFULLR
+  'override-copyright': 2003-2013 Free Software Foundation, Inc.
+    2013-2016 g10 Code GmbH
+autogen.sh:
+  'override-license': FSFULLR
+src/versioninfo.rc.in:
+  'override-license': FSFULLR
+m4/gpg-error.m4:
+  'override-license': FSFULLR
+  'override-copyright': 2002, 2003, 2004, 2011, 2014, 2018, 2020, 2021, 2022, 2024 g10 Code GmbH
+m4/autobuild.m4:
+  'override-license': GPL-2_with_nonstandard_Autoconf-data_exception
+m4/libtool.m4:
+  'override-license': FSFULLR
+INSTALL:
+  'override-license': FSFULLR
+ChangeLog:
+  'override-license': FSFULLR
+NEWS:
+  'override-license': FSFULLRWD
+build-aux/git-log-footer:
+  'override-license': FSFULLR
+debian/*:
+  'override-license': LGPL-2.1+
+  'override-copyright': |
+    Eric Dorland <eric@debian.org>
+    Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+    Andreas Metzler <ametzler@debian.org>
+    2004-2024, Debian GnuPG maintainers

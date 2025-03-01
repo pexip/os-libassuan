@@ -1,0 +1,27 @@
+Management of debian/copyright:
+===============================
+We use cme to manage/update the machine-readable copyright file.
+
+
+Basic mode for updating to a new upstream version:
+
+* apt install cme libconfig-model-dpkg-perl
+
+* Doublecheck whether manual overrides in debian/fill.copyright.blanks.yml
+  are still needed/up to date.
+
+* Doublecheck whether wrangling in debian/fix.scanned.copyright
+  is still needed/up to date.
+
+* cp debian/copyright-template debian/copyright
+* cme update dpkg-copyright
+
+Now doublecheck the generated copyright file. Add new License:-stanzas to
+debian/copyright-template for newly used licenses ("Please fill license
+UNKNOWN from header of"), update overrides and/or the list of
+ignored/scanned files (debian/copyright-scan-patterns.yml) if necessary.
+Rinse and repeat.
+
+https://github.com/dod38fr/config-model/wiki/Updating-debian-copyright-file-with-cme
+https://ddumont.wordpress.com/2015/04/05/improving-creation-of-debian-copyright-file/
+https://ddumont.wordpress.com/2015/05/31/improving-update-of-existing-debiancopyright-file/

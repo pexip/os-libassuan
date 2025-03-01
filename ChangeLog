@@ -1,3 +1,781 @@
+2025-02-18  Werner Koch  <wk@gnupg.org>
+
+	Release 3.0.2.
+	+ commit 0f84595a4bc706d3afb969d59618244c7db3b59f
+
+
+	Put full commit id into VERSION.
+	+ commit 27b58fd6674c58405a3acc162b21a03931227174
+	* autogen.sh: Update from current libgpg-error.
+	* configure.ac: Append commit id to the VERSION file.
+	(BUILD_REVISION): New ac_define.
+	* src/sysutils.c (_assuan_sysutils_blurb): Replace revision by full
+	commit id.
+
+2024-12-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Enable "w32_error" for assuan_sock_get_flag.
+	+ commit 70d454e1ff48d5fe5765645a7bec1c27b3b8ad38
+	* src/assuan-defs.h (struct assuan_context_s): Have w32_error field.
+	(_assuan_sock_wsa2errno): Supply CTX argument.
+	* src/assuan-socket.c (_assuan_sock_wsa2errno): Put ERR to the field
+	in CTX argument.
+	(_assuan_sock_get_flag): Support "w32_error" string.
+	(_assuan_sock_accept, _assuan_sock_bind): Follow the change.
+	* src/assuan-uds.c (uds_reader, uds_writer): Likewise.
+	* src/system-w32.c (__assuan_close, __assuan_socket): Likewise.
+	(__assuan_connect): Likewise.
+
+2024-12-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix errno for assuan_sock_bind failure.
+	+ commit cc6c29735d59e832be67f487e0c74e049ceaea94
+	* src/assuan-socket.c (_assuan_sock_bind): Use WSAGetLastError and the
+	mapping to set ERRNO.
+
+2024-09-16  Ben Kibbey  <bjk@luxsci.net>
+
+	Fix FreeBSD to set the pid of assuan_peercred_t.
+	+ commit dfa5e6532d7eecc25841666010004d278e9e4542
+	* configure.ac: Check for struct xucred.cr_pid.
+	* src/assuan-socket-server.c (accept_connection_bottom): Obtain the pid
+	  via LOCAL_PEERCRED.
+
+2024-07-11  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Use socklen_t for the length of socket address.
+	+ commit 69a703446b61d9e139e693dbcc22d2d80083a788
+	* src/assuan-defs.h (_assuan_sock_connect): Use socklen_t.
+	(_assuan_sock_bind, _assuan_sock_get_nonce): Likewise.
+	* src/assuan-socket.c (_assuan_sock_connect): Likewise.
+	(_assuan_sock_bind, _assuan_sock_get_nonce, assuan_sock_connect)
+	(assuan_sock_bind, assuan_sock_get_nonce): Likewise.
+	* src/assuan.h.in (assuan_sock_connect, assuan_sock_bind)
+	(assuan_sock_get_nonce): Likewise.
+
+	Fix typo in assuan.h.
+	+ commit b8148b4f5735e1215eb72f208e1ae2891213247e
+	* src/assuan.h.in (ASSUAN_NO_NPTH_SYSTEM_HOOKS_ANY_MORE): Fix.
+
+2024-07-07  Ben Kibbey  <bjk@luxsci.net>
+
+	libassuan.m4: Fix AC_DEFINE variable expansion.
+	+ commit b9b7f1cf3fd0228fd31cb62a144628ee8ad26953
+	* src/libassuan.m4 (_AM_PATH_LIBASSUAN_COMMON): Use AC_DEFINE_UNQUOTED()
+	  to expand $req_libassuan_api.
+
+2024-06-25  Werner Koch  <wk@gnupg.org>
+
+	Remove an declaration for an unused function.
+	+ commit 69069bc63e6b1152e34e39bc322132fd4fd7284d
+	* src/assuan-defs.h (putc_unlocked): Remove declaration.
+
+2024-06-24  Werner Koch  <wk@gnupg.org>
+
+	Release 3.0.1.
+	+ commit c9e902705a50abaf532c9d24347dfd1f3b5779fb
+	* src/libassuan.vers: Change to LIBASSUAN_2.0.
+
+2024-06-18  Werner Koch  <wk@gnupg.org>
+
+	Release 3.0.0.
+	+ commit 0351ecfa4f35ad44684075abec153574986b11bd
+	* configure.ac: Set LT age to zero because we really have an API
+	change.  Note that Current was already bumped up.
+
+	Add new socket flags "linger" and "reuseaddr".
+	+ commit 87f92fe962ae77045d8ddea3ae88d57234c04533
+	* src/assuan-socket.c (_assuan_sock_set_flag): Add new flags.
+	(_assuan_sock_get_flag): Ditto.
+
+2024-06-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Spell fix in gpg-error.m4 from GnuPG.
+	+ commit 24f05d64f47523e40b6936f2fd208d34516ff9d5
+
+
+2024-06-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	m4: Update gpg-error.m4.
+	+ commit 577c1cd80665989be2fee393148487d3dfef4278
+	* m4/gpg-error.m4: Update from gpg-error master.
+
+	libassuan.m4: Fix setting/using GPG_ERROR_CONFIG.
+	+ commit db27c9489791baa8b2036191dce35e12f76af85d
+	libassuan.m4 (_AM_PATH_GPGRT_CONFIG): Don't set GPG_ERROR_CONFIG and
+	gpg_error_config_version.
+
+2024-06-07  Werner Koch  <wk@gnupg.org>
+
+	Always append the process identification to hello line.
+	+ commit ee9167cc3501021761f91f3f00cab57b5719ecc0
+	* src/assuan-listen.c (assuan_accept): Always append "process %i".
+
+2024-05-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix the previous commit.
+	+ commit c1bbbe8a26957db43a20e28cf28cfa8e147ef1f6
+
+
+	m4: Include _AM_PATH_GPGRT_CONFIG definition.
+	+ commit 1c27538e4626348b050e95c6f40c023850d41e58
+	* src/libassuan.m4: Find gpgrt-config.
+
+2023-10-28  Andre Heinecke  <aheinecke@gnupg.org>
+
+	tests: Cleanup mention of removed variable.
+	+ commit 6756482d2627f67437afb05d88a22f03c6bad07c
+	* tests/Makefile.am (noinst_PROGRAMS): Remove w32cetools.
+
+2023-09-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Change the default for --with-libtool-modification.
+	+ commit 76816b1350c093ef98365db5a66ddb364d27dc28
+	* configure.ac (--with-libtool-modification): default=never.
+
+2023-08-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update libtool-patch.sed from libgpg-error.
+	+ commit d63bf50dfe494114fd410153a3cba73a1dfd7503
+	* build-aux/libtool-patch.sed: Fail with exit code 1,
+	when it doesn't go well.
+
+2023-08-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: New configure option --with-libtool-modification.
+	+ commit 9bb7a2a1a066b20022714b21ca2ae5ccb9d19d55
+	* Makefile.am (EXTRA_DIST): Add build-aux/libtool-patch.sed.
+	* build-aux/libtool-patch.sed: New.
+	* configure.ac (--with-libtool-modification): New.
+	* build-aux/ltmain.sh: Revert our own local modification.
+
+2023-08-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix for v2 support: ASSUAN_REALLY_REQUIRE_V2_NPTH_SYSTEM_HOOKS.
+	+ commit b975f9a3cc63ccd35a16a7d9465228e122462a8e
+	* src/assuan.h.in (ASSUAN_REALLY_REQUIRE_V2_NPTH_SYSTEM_HOOKS):
+	Rename.
+
+2023-08-02  NIIBE Yutaka  <gniibe@fsij.org>
+
+	New function: assuan_control.
+	+ commit bb7aa0ebed7379275eba6ad1eec62da34505c7e4
+	* src/assuan.c (assuan_control): New.
+	* src/assuan.h.in (ASSUAN_CONTROL_REINIT_SYSCALL_CLAMP): New.
+	(assuan_control): New.
+	* src/libassuan.def (assuan_control): Add.
+	* src/libassuan.vers (assuan_control): Add.
+
+2023-07-26  NIIBE Yutaka  <gniibe@fsij.org>
+
+	libassuan.m4: Allow use of libassuan 3 for API of version 2.
+	+ commit 9ce1b41cc1fe94baf16a32bb444d4aa4fe2d58a3
+	* src/libassuan.m4: API 3 is backward compatible to API 2.
+
+2023-07-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Add new pipe functions to control its server process.
+	+ commit bf25d0e39bdcff28dc690722b8defc21bebeeed3
+	* src/assuan-pipe-connect.c (assuan_pipe_wait_server_termination)
+	(assuan_pipe_kill_server): New.
+	* src/assuan.h.in: Add new functions.
+	* src/libassuan.def: Add symbols for those functions.
+	* src/libassuan.vers: Likewise.
+	* src/system-posix.c (__assuan_waitpid): Extend the semantics for
+	OPTIONS.
+	* src/system-w32.c (__assuan_waitpid): Likewise.
+
+	socket: Don't call pre/post_syscall for bind.
+	+ commit c14409b6b4eb7b914c41c7d7f67137e315c935d9
+	* src/assuan-socket.c (_assuan_sock_bind): Don't call
+	_assuan_pre_syscall and _assuan_post_syscall.
+
+	build: Prepare release with API change.
+	+ commit dd7e0c57e48c21b79ab553c38cfad9155f6ef7fb
+	* configure.ac (LIBASSUAN_CONFIG_API_VERSION): Increment.
+	(LIBASSUAN_LT_CURRENT): Increment for adding new interface.
+	(LIBASSUAN_LT_AGE): Likewise.
+	(LIBASSUAN_LT_REVISION): Reset to 0.
+
+2023-07-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Update NEWS.
+	+ commit c4687dbe1c2b99f96a315d8b2907ecac4fef6cbb
+
+
+2023-07-20  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Expose assuan_sock_accept function.
+	+ commit 782d5f8971eafdeeb7fdf6cc147482342b90f3b9
+
+
+	Add _assuan_pre_syscall / _assuan_post_syscall to _assuan_sock_*.
+	+ commit 703b4100a4162216314d3489fa9d3160c3aadeb5
+	* src/assuan-socket.c (_assuan_sock_accept): Add _assuan_pre_syscall /
+	_assuan_post_syscall.
+	(_assuan_sock_bind): Likewise.
+
+2023-07-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Support larger greeting message.
+	+ commit 5de577417af189b65bc0b78e7274a0510421b2b5
+	* src/assuan-listen.c (assuan_accept): Update the size.
+
+2023-06-15  Werner Koch  <wk@gnupg.org>
+
+	Flush data before clearing the confidential flag.
+	+ commit 049b8001f163ebae1a44056989f06f489c59349d
+	* src/context.c (assuan_end_confidential): Flush data.
+
+2023-06-06  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix closing for non-socket HANDLE.
+	+ commit 2f0232b15fdc5071e13a0f3595141cf813f4bfdf
+	* src/system-w32.c (__assuan_close): Revert the change.
+
+2023-06-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix hello_line parsing for fd passing.
+	+ commit 592f6bb89ad160d81e5a658e45df590120df8b60
+	* tests/fdpassing.c (server_socket): Test with comma in the hello
+	line.
+
+2023-05-31  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Always include process information in HELLO.
+	+ commit c69578bc248ee18d3a35d33e0d18d17bebbe99b4
+	* src/assuan-listen.c (assuan_accept): Supply process information
+	when ctx->hello is avaliable, too.
+
+	w32: Fix error return for sending fd.
+	+ commit efccdb36ec338f3739e1ef3bb2ce0d2a04219566
+	* src/system-w32.c (get_file_handle): Have a CTX to compose an error.
+	(w32_fdpass_send): Check PROCESS_ID.
+	Compose an error with _assuan_error.
+
+2023-05-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Allow use of global system hooks with API version 2.
+	+ commit 8d83aea214a17c8fff32bfb90eaa9870ea9630e2
+	* src/libassuan.m4 (LIBASSUAN_API_REQUESTED): New.
+	* src/assuan.h.in (ASSUAN_NO_GLOBAL_SYSTEM_HOOKS_ANY_MORE): New.
+	(ASSUAN_SYSTEM_NPTH_IMPL, ASSUAN_SYSTEM_NPTH): Relax the condition.
+
+2023-05-17  NIIBE Yutaka  <gniibe@fsij.org>
+
+	doc: Update documentation for the method spawn and waitpid.
+	+ commit af34d84651b684bb771501f8c493e193e5e65dbc
+
+
+	w32: File handle passing to server is now supported.
+	+ commit 316fae4401975e26d6b7e6b89534133c7b3df25c
+	* configure.ac: Fix for MinGW.
+	* src/assuan-buffer.c (assuan_sendfd): Fix runtime check.
+
+	Don't use ASSUAN_INVALID_PID for assuan_pid_t value.
+	+ commit 5d1cdaaa03c664fddbaff16c68e79fc6a248c59b
+	* src/assuan.c (assuan_new_ext): Use -1.
+	* src/client.c (_assuan_client_finish): Likewise.
+
+	w32: Cleaner semantics for PID and Process handle.
+	+ commit 6350f796fdd1c7519c35a9cd71b33b6dafc5ed3a
+	* src/assuan-defs.h (struct assuan_context_s): Introduce SERVER_PROC
+	member.  Clarify the use of PROCESS_ID and PID.
+	Introduce assuan_pid_t for internal use of process id or handle.
+	* src/assuan.h.in: Follow the change.
+	* src/assuan.c (assuan_new_ext): Likewise.
+	* src/client.c (_assuan_client_finish): Likewise.
+	* src/assuan-pipe-connect.c (pipe_connect): Likewise.
+	* src/server.c (_assuan_server_finish): Likewise.
+	* src/system-posix.c: Likewise.
+	* src/system-w32.c: Likewise.
+	* src/system.c: Likewise.
+	* src/assuan-pipe-server.c (assuan_init_pipe_server)
+	[HAVE_W32_SYSTEM]: Exclude the use of _assuan_pipe_connect_pid.
+	* src/assuan-socket-server.c (accept_connection_bottom)
+	[HAVE_W32_SYSTEM]: Exclude the use of the member peercred.pid.
+	* src/assuan-socket.c (_assuan_sock_check_nonce): Support Cygwin
+	Unix domain emulation for having valid client process ID.
+	* src/context.c (assuan_get_pid): Clarify the use cases.
+	* src/posix-types.inc.h, src/w32-types.inc.h: Introduce assuan_pid_t.
+
+2023-05-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix wrong return type for functions.
+	+ commit 18edc4f89f9aa46a669031925176f241fd8d637f
+	* src/system.c (_assuan_recvmsg, _assuan_sendmsg): Fix to int.
+	(_assuan_waitpid): Fix to pid_t.
+
+2023-05-12  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Use -no-fast-install LDFLAGS for Windows.
+	+ commit 69578137570956a31eaa5a9559dbcfbe6d9d9f23
+	* tests/Makefile.am [HAVE_W32_SYSTEM] (AM_LDFLAGS): Conditionalize.
+
+2023-05-11  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Deprecate ASSUAN_SYSTEM_NPTH.
+	+ commit 9ecbd8e60c6904e72f7a22963dffb0016eab69b4
+	* src/assuan.h.in: Introduce new configuration with
+	ASSUAN_REALLY_REQUIRE_OLD_WAY_OF_SYSTEM_NPTH.
+
+	Allow NULL for system_hooks.
+	+ commit 1eb66efbdd7b0fd09fadbdd5d5650e6c2eae032e
+	* src/system.c (_assuan_system_hooks_copy): Do nothing with SRC=NULL.
+
+	Fix the previous commit.
+	+ commit 620acf6fe3aa22f7b3c50734aade29a2dbe4ef6e
+	* src/assuan.c (_assuan_pre_syscall): Call the pre_syscall_func
+	function after get it.
+
+	Fix calling gpgrt_get_syscall_clamp.
+	+ commit 223cc95c188a9bbb97affb506116fcdd4ef312a2
+	* src/assuan.c (assuan_new_ext): Move gpgrt_get_syscall_clamp to...
+	(_assuan_pre_syscall): ... here.
+
+	tests: Fix for POSIX machine.
+	+ commit fb5d02d7660254d9b80aa64270f08f34693bed67
+	* modified   tests/pipeconnect.c (cmd_cat): Ifdef-out W32.
+
+2023-05-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix test header file for 64-bit Windows.
+	+ commit 7191c125aca1c8cbaadf7a167b09035b9d8301ec
+	* tests/common.h: Add for HAVE_W64_SYSTEM.
+
+	w32: Fix pipeconnect test program for Windows.
+	+ commit f2d829e3db0241fef527135c5d92540fa758f8dd
+	* tests/pipeconnect.c: Fix for input_fd and output_fd.
+
+	w32: Minor fixes for ifdef/endif for W32 and W64.
+	+ commit 295e33465eaefaf4c79e9ee2128d8ad821bf7ec5
+	* src/assuan-defs.h: Fix.
+	* src/assuan-pipe-connect.c: Likewise.
+	* src/assuan-socket-connect.c: Likewise.
+
+	w32: Fix the semantics of sending FD, it's Windows HANDLE.
+	+ commit 17055e1c995367e60f45ee73fa1a39e7a09efd59
+	* src/assuan-handler.c (w32_handler_sendfd): It's Windows HANDLE.
+	* src/system-w32.c (get_file_handle, w32_fdpass_send): Likewise.
+	* tests/fdpassing.c (cmd_echo): Received FD is Windows HANDLE.
+	(client): Use Windows HANDLE for assuan_sendfd.
+
+2023-05-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Implement timeout in assuan_sock_connect_byname.
+	+ commit 9110945ce625e4a668eeed6a00252b7851e6d4b6
+	* src/assuan-socket.c (socks5_connect): Add new argument TIMEOUT in
+	milliseconds.
+	(_assuan_sock_connect): Follow the change.
+	(_assuan_sock_connect_byname): Fourth argument is now TIMEOUT.
+	(assuan_sock_connect_byname): Likewise.
+
+2023-04-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 3d8195ebc5e3f48c004b3a7ec473e66166c58fe7
+	* m4/gpg-error.m4: Update from libgpg-error master.
+
+2023-01-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix assuan_socket_connect.
+	+ commit e4e54fb4ba1b82f1cd08ea44ad4c48db4c236311
+	* src/assuan-socket-connect.c (_assuan_connect_finalize): Don't set
+	flags.is_socket here, since it's too late.
+	(assuan_socket_connect_fd): Set flags.is_socket.
+	(assuan_socket_connect): Set flags.is_socket, before _assuan_sock_new.
+
+2022-11-18  Andre Heinecke  <aheinecke@gnupg.org>
+
+	Fix make dist target.
+	+ commit a720b6cc443a7d62a200c5ca3950098dad487361
+	* tests/Makefile.am (EXTRA_DIST): Add fdpassing-socket.sh
+
+2022-11-15  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix confusion between process ID and process HANDLE.
+	+ commit 523e3cbfe29f5665ebfac205f1a6d88bf7a3df87
+	* src/assuan-defs.h (struct assuan_context_s): Rename to process_id.
+	* src/assuan-pipe-connect.c (initial_handshake): Fix variable name
+	and access to the member field.
+	* src/assuan-socket-connect.c (_assuan_connect_finalize): Likewise.
+	* src/system-w32.c (get_file_handle): Likewise.
+	(w32_fdpass_send): Likewise.
+
+2022-11-09  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Have PROCESS_HANDLE in struct assuan_context_s.
+	+ commit ba84b780df973ba7ca7f7c51fbd1b6d1a69b8c01
+	* src/assuan-defs.h (struct assuan_context_s): Add process_handle
+	field.  It's "int" instead of DWORD, because of getpid function.
+	* src/assuan-pipe-connect.c (initial_handshake): Set ->process_handle,
+	not override ->pid.
+	* src/assuan-socket-connect.c (assuan_connect_finalize): Likewise.
+	* src/system-w32.c (w32_fdpass_send): Use ->process_handle.
+
+	tests: Use common code for Windows.
+	+ commit 7e6f3f007d64b6b6b402c8459c8ba6b39289f4ff
+	* tests/fdpassing.c (main): Get program name from ARGV.
+
+2022-11-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Add fdpassing-socket.sh script.
+	+ commit 8962c1e774e716cde1a7afeaca86558e48960ab1
+	* tests/Makefile.am (TESTS_ENVIRONMENT): Export EXEEXT.
+	(test_programs): New.  Run pipeconnect for Windows, too.
+	(check_SCRIPTS): New.
+	(TESTS): Now, it's test_programs and check_SCRIPTS.
+	(noinst_PROGRAMS): Not including check_SCRIPTS.
+	(tests/fdpassing-socket.sh): New, to test socket connection.
+	* tests/fdpassing.c: Include socket connection test.
+	* tests/pipeconnect.c: Fix for Windows.
+
+2022-11-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Support fd passing through socket.
+	+ commit 3297e453aa0e371e14fd26e53f4a6f84e20c21d3
+	* src/assuan-socket-connect.c (_assuan_connect_finalize): Use
+	w32_fdpass_send.  Get peer's PID from the initial connection.
+	* src/assuan-socket-server.c (assuan_init_socket_server): Use
+	w32_fdpass_recv.
+
+	w32: Support fd passing through pipe.
+	+ commit a1f480468a3b41f3843833654c0b56c33552519c
+	* src/assuan-pipe-connect.c (initial_handshake): Get peer's PID
+	from the initial interaction.
+	* src/assuan-pipe-server.c (assuan_init_pipe_server): Handle the case
+	of FILEDES == NULL on Windows.
+	* tests/Makefile.am [HAVE_W32_SYSTEM] (TESTS): Add fdpassing.
+	* tests/fdpassing.c: Remove including sys/socket.h and sys/wait.h.
+	(cmd_echo): Output to stder, as stdout is /dev/null.
+	(main): Support Windows.
+
+	Show the pid of listening process in the hello line.
+	+ commit 07adf41f0f49233cc4842bad1e6d2fdc9dc431af
+	* src/assuan-listen.c (assuan_accept): Use getpid instead of
+	assuan_get_pid.
+
+2022-11-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Support sendfd/recvfd through pipe connection.
+	+ commit 870fdcf92e5991c0bb2e349a951aa8dd93b0e22f
+	* src/assuan-defs.h (w32_fdpass_send, w32_fdpass_recv): New.
+	* src/assuan-pipe-connect.c [HAVE_W32_SYSTEM] (pipe_connect): Set
+	w32_fdpass_send.
+	[!HAVE_W32_SYSTEM] (assuan_pipe_connect): Use socketpair_connect.
+	* src/assuan-pipe-server.c
+	[HAVE_W32_SYSTEM] (assuan_init_pipe_server): Set w32_fdpass_recv.
+	* src/system-w32.c (get_file_handle): New.
+	(w32_fdpass_send): New, using "SENDFD" internal command.
+	(w32_fdpass_recv): New, using the result of "SENDFD" internal command.
+
+	w32: Add SENDFD internal command.
+	+ commit ce794a0a88a8dca11810ac79e6be6bf6b4e5326c
+	* src/assuan-handler.c (w32_handler_sendfd): New.
+	(std_cmd_table): Add the "SENDFD" command.
+
+	client: Only call _assuan_waitpid when it's not socket.
+	+ commit 27acee6a04dbc6d2b153387bc89d2f711ded9726
+	* src/client.c (_assuan_client_finish): Check if it's socket.
+
+2022-11-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Prefer gpgrt-config when available.
+	+ commit d769ec2db2e0a89fe446fb90b3c4be8ec05abebd
+	* src/libassuan.m4: Overriding the decision by
+	--with-libassuan-prefix, use gpgrt-config libassuan when
+	gpgrt-config is available.
+
+2022-10-25  Andre Heinecke  <aheinecke@gnupg.org>
+
+	w32: Fix make dist.
+	+ commit 62547ec2497105bf95e7755ed88f996353539789
+	* src/Makefile.am (parts_of_assuan_h): Readd w32-includes.h
+
+2022-10-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 0c22952c71bd44d39f3b91546bec5297be6de071
+	* m4/gpg-error.m4: Update from libgpg-error 1.46.
+
+2022-10-12  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Remove WindowsCE support from mkheader.
+	+ commit df6aec566ce450e4e0702e4784569642f2bc6703
+	* src/assuan.h.in (@include:sys/types.h@, @include:unistd.h@): Simply
+	include <sys/types.h> and <unistd.h>.
+	(@include:w32ce-add@): Remove.
+	* src/mkheader.c (write_special): Remove mingw32ce support.
+
+2022-09-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Silence compiler warnings.
+	+ commit 6bc8a106c4bd6c1e3a4ad834331eb24431868beb
+	* src/assuan-socket.c (assuan_sock_init): It's no args.
+	(assuan_sock_deinit): Likewise.
+
+2022-08-31  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Drop WindowsCE support.
+	+ commit e3b1e3857e00c6e8216e953b0b38f4dcda00cd53
+	* contrib/*: Remove.
+	* Makefile.am (EXTRA_DIST): Don't include contrib/.
+	* configure.ac (HAVE_W32CE_SYSTEM): Remove.
+	* src/gpgcedev.c: Remove.
+	* src/gpgcedev.def: Remove.
+	* src/gpgcemgr.c: Remove.
+	* src/system-w32ce.c: Remove.
+	* src/w32ce-add.h: Remove.
+	* src/w32ce-fd-t.inc.h: Remove.
+	* src/Makefile.am (EXTRA_DIST, parts_of_assuan_h, common_sources): Fix.
+	* src/assuan-buffer.c [HAVE_W32CE_SYSTEM]: No conditionalize.
+	* src/setenv.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* src/assuan-defs.h [HAVE_W32CE_SYSTEM]: Remove dependent part.
+	* src/assuan-error.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* src/assuan-handler.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* src/assuan-socket.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* src/system.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* src/sysutils.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* tests/Makefile.am (EXTRA_DIST): Fix.
+	(w32cetools): Remove.
+	* tests/common.h [HAVE_W32CE_SYSTEM]: Remove dependent part.
+	* tests/pipeconnect.c [HAVE_W32CE_SYSTEM]: Likewise.
+	* tests/ce-createpipe.c: Remove.
+	* tests/ce-server.c: Remove.
+
+2022-07-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update config.guess, config.sub, and config.rpath.
+	+ commit 6da6a3df3c98552c710616d40e245467c3fe675c
+	* build-aux/config.guess: Update from upstream.
+	* build-aux/config.sub: Ditto.
+	* build-aux/config.rpath: Update from gettext 0.21.
+
+2022-06-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 3156f29a797d91158187353edbafe0c967bd0b6d
+	* m4/gpg-error.m4: Update from libgpg-error.
+
+2022-06-20  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Don't access NULL by wipememory.
+	+ commit 97516d6c24b9266124172276515253aee128a76f
+	* src/assuan-inquire.c (assuan_inquire): Check mb->buf.
+
+2022-06-08  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Remove dead code.
+	+ commit 2e310bb10e33f655f9b920b94809d40633641961
+	* tests/socks5.c (main): Unsigned value is always larger than 0
+
+	config: Remove 18 years unused variable.
+	+ commit 850f404ef079eb5ce7907612ba93ceba784d634b
+	Its use was removed in 2004 in 9096d0adb448330b5b197579bd57d942635d7021
+
+	* src/libassuan-config.in: Remove unused variable
+
+	tests: Avoid leaking file descriptors on errors.
+	+ commit 70b465e0bf65c9ac6d1f7e242d2b76a84afaac6a
+	* tests/fdpassing.c (client): Close fp on error
+
+2022-05-25  NIIBE Yutaka  <gniibe@fsij.org>
+
+	client: Handle inquiry from server with CONFIDENTIAL.
+	+ commit 2a5550b7a13ce627ed0e40ab9582478ab5c9b809
+	* src/assuan-defs.h (struct assuan_context_s): Add new flags,
+	in_inq_cb and confidential_inquiry.
+	* src/client.c (assuan_transact): Use the new flags to wipe the
+	outbound buffer for inquiry when CONFIDENTIAL.
+	* src/context.c (assuan_set_flag): When ASSUAN_CONFIDENTIAL is set in
+	inquire callback, set the confidential_inquiry flag.
+
+	struct assuan_context_s: Move boolean fields to flags.
+	+ commit aafbde956f88d0e618b661f86041679bf8c5850a
+	* src/assuan-defs.h (struct assuan_context_s): Move is_server,
+	in_inquire, in_process_next, process_complete, in_command into
+	flags.
+	* src/assuan-buffer.c: Follow the change.
+	* src/assuan-handler.c: Likewise.
+	* src/assuan-inquire.c: Likewise.
+	* src/assuan-pipe-server.c: Likewise.
+	* src/assuan-socket-server.c: Likewise.
+
+	client: Wipe the inbound buffer when CONFIDENTIAL.
+	+ commit fd1ac5cdf804e15039276855134ecf1c0fb715d4
+	* src/client.c (assuan_transact): Wipe the buffer.
+
+	server,client: Wipe the outbound buffer when CONFIDENTIAL.
+	+ commit 89e8f265e37758c3aaaa7dc580d24d96d37cc8a8
+	* src/assuan-buffer.c (assuan_send_data): Wipe the buffer.
+
+	server: Wipe out the memory used by assuan_inquire if CONFIDENTIAL.
+	+ commit d812e28af637144d078005887cb7519d7a2d0c58
+	* src/assuan-inquire.c (assuan_inquire): Wipe the memory and
+	inbound buffer.
+
+2022-04-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Add assuan_sock_accept function.
+	+ commit 84ae2b1d27ce81e87a8386918e48063dfd173d2e
+	* src/assuan-socket.c (_assuan_sock_accept): New.
+	(assuan_sock_accept): New.
+	* src/assuan.h.in (assuan_sock_accept): New.
+
+2022-04-06  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Store a flag if it's socket or not in Assuan CTX.
+	+ commit c93eb901e58d5b31294c2d452659b5150d95ec59
+	* src/assuan-defs.h (struct assuan_context_s): Add is_socket flag.
+	* src/assuan-socket.c (assuan_sock_init): Set the flag.
+	* src/assuan-socket-connect.c (_assuan_connect_finalize): Likewise.
+	* src/assuan-socket-server.c (assuan_init_socket_server): Likewise.
+	* src/system-w32.c (__assuan_close): Use the flag.
+	(is_socket): Remove.
+	(__assuan_read, __assuan_write): Use the flag.
+
+2022-04-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix API break.
+	+ commit 5b77d39672aca33416be95c685295e49ecb9f457
+	* src/posix-fd-t.inc.h (assuan_fd_from_posix_fd): Revert.
+	* src/w32-fd-t.inc.h (assuan_fd_from_posix_fd): Revert.
+	* src/system-w32.c (assuan_fd_from_posix_fd): Revert.
+
+	build: Remove unused putc_unlocked.c.
+	+ commit 9260fb12509affae190485744fa06c97cbc543bb
+	* src/putc_unlocked.c: Remove.
+	* configure.ac: Remove putc_unlocked replace.
+
+	Take advantage of gpgrt_get_syscall_clamp function.
+	+ commit 0fae5823f6e6a9592110ae50dabc6fb248eef998
+	* src/assuan-defs.h (_assuan_pre_syscall, _assuan_post_syscall): New.
+	* src/assuan.c (_assuan_pre_syscall, _assuan_post_syscall): New.
+	(pre_syscall_func, post_syscall_func): New.
+	(_assuan_syscall_func_initialized): New.
+	(assuan_new_ext): Call gpgrt_get_syscall_clamp to get clamp functions.
+	* src/system-posix.c (_assuan_system_hooks): Use version 0.
+	* src/system-w32.c (_assuan_system_hooks): Likewise.
+	* src/system.c (_assuan_usleep): Call clamp functions if no hooks.
+	(_assuan_close, _assuan_close_inheritable, _assuan_read): Likewise.
+	(_assuan_write, _assuan_recvmsg, _assuan_sendmsg): Likewise.
+	(_assuan_waitpid, _assuan_connect): Likewise.
+	(_assuan_pipe): Call __assuan_pipe directly if no hooks.
+	(_assuan_spawn): Call __assuan_spawn directly if no hooks.
+	(_assuan_socketpair): Call __assuan_socketpair directly if no hooks.
+	(_assuan_socket): Call __assuan_socket directly if no hooks.
+
+	build: Fix listing m4 files.
+	+ commit a43090e38843126e5026548ff751d139b1e522b0
+	* m4/Makefile.am (EXTRA_DIST): Add ax_cc_for_build.m4 and
+	gpg-error.m4.  Remove sys_socket_h.m4.
+
+2022-04-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix assuan_socket_connect_fd to be usable.
+	+ commit 28a40a298661877e1bbeb3eb9ac58a85bdd85b02
+	* src/assuan.h.in (assuan_socket_connect_fd): Second arg assuan_fd_t.
+	* src/assuan-socket-connect.c (assuan_socket_connect_fd): Second arg
+	should be an object of type SOCKET.
+	* src/posix-fd-t.inc.h (assuan_fd_from_posix_fd): Remove.
+	* src/w32-fd-t.inc.h (assuan_fd_from_posix_fd): Move to...
+	* src/system-w32.c (assuan_fd_from_posix_fd): ... here.
+
+2022-04-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Better cross build support.
+	+ commit a054a0a7cfb086e2cd80c64043a8694c3c1f525d
+	* configure.ac: Use AX_CC_FOR_BUILD.
+	* src/Makefile.am: Use EXEEXT_FOR_BUILD.
+	* m4/ax_cc_for_build.m4: New from libgpg-error.
+
+2022-03-31  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix internal socket API to be consistent for SOCKET.
+	+ commit a8125eba05beb33823657f095acc72191543b07f
+	* src/assuan-defs.h (_assuan_socket): Return value has type assuan_fd_t.
+	(_assuan_connect): Second argument has type assuan_fd_t.
+	[HAVE_W64_SYSTEM] (SOCKET2HANDLE): Revert the change before.
+	* src/assuan-socket.c (_assuan_sock_new): No type coercion for
+	_assuan_socket.
+	(socks5_connect): No type coercion for _assuan_connect.
+	(_assuan_sock_connect): Likewise.
+	* src/assuan.h.in (struct assuan_system_hooks): Fix method signature
+	of socket for return value type and of connect for the second
+	argument.
+	(__assuan_socket): Return value has type assuan_fd_t.
+	(__assuan_connect): Second argument has type assuan_fd_t.
+	(ASSUAN_SYSTEM_NPTH_IMPL): Fix for _assuan_npth_connect for its
+	second argument.
+	* src/system-w32.c (__assuan_socket): Return value has type
+	assuan_fd_t.
+	Use SOCKET2HANDLE for type coercion for socket.
+	Use INVALID_SOCKET.
+	(__assuan_connect): Second argument has type assuan_fd_t.
+	Use HANDLE2SOCKET for type coercion for sock.
+	* src/system.c (_assuan_socket): Return value has type assuan_fd_t.
+	(_assuan_connect): Second argument has type assuan_fd_t.
+
+	build: When no gpg-error-config, not install libassuan-config.
+	+ commit 9de02ca16d30a3501a9333e48934b008fcd94f8f
+	* configure.ac (USE_GPGRT_CONFIG): New.
+	* src/Makefile.am [USE_GPGRT_CONFIG]: Conditionalize the install
+	of libassuan-config.
+
+	Remove GNU Pth support.
+	+ commit eeda9ac0a71951a2894cd92a366216d2f65c5ad1
+	* src/posix-sys-pth-impl.h: Remove.
+	* src/w32-sys-pth-impl.h: Remove.
+	* src/Makefile.am: Follow the change.
+	* src/assuan.h.in (ASSUAN_SYSTEM_PTH_IMPL, ASSUAN_SYSTEM_PTH): Remove.
+	* src/mkheader.c (write_special): Remove Pth support.
+
+2022-03-29  NIIBE Yutaka  <gniibe@fsij.org>
+
+	w32: Fix definition of type to be generated into assuan.h.
+	+ commit 564e0d94f21f9c2cd8cadf2846163871352f1a92
+	* src/w32-types.inc.h: Distinguish the case of _WIN64.
+
+2021-12-22  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update for newer autoconf.
+	+ commit 66d5fe281c8dcbbbc13edc8630aaf631b6cb5e85
+	* configure.ac (AC_PREREQ): Require >= 2.69.
+	(AC_HEADER_STDC): Remove.
+	* m4/sys_socket_h.m4: Remove.
+
+2021-12-17  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build,w32: Update configure script.
+	+ commit 576fbb033805b077ffe2270cb8a17c3f2dc830ae
+	* configure.ac: Don't use gl_HEADER_SYS_SOCKET, but check winsock2.h.
+
+2021-11-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	libtool: Link without -flat_namespace for macOS.
+	+ commit e342b58b6230d22c1225ed680f05e9d134a8f657
+	* m4/libtool.m4: Not setting 10.0 to MACOSX_DEPLOYMENT_TARGET when not
+	defined.  Only specify -flat_namespace to linker for specific
+	(older) versions and hosts.
+
+2021-08-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Simplify configure.ac.
+	+ commit 669c76ee28c0b10c418bb47f95b1401631478c5a
+	* configure.ac (AC_CHECK_HEADERS): Remove string.h.
+
+2021-05-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: _DARWIN_C_SOURCE should be 1.
+	+ commit 335030e3d204afe33873df83c29302ff1caa0217
+	* configure.ac (*-apple-darwin*): Set _DARWIN_C_SOURCE 1.
+
+2021-04-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 8ec3e9f1dd88e14f42f31e8692a8664bd894226b
+	* m4/gpg-error.m4: Update from libgpg-error.
+
 2021-03-22  Werner Koch  <wk@gnupg.org>
 
 	Release 2.5.5.

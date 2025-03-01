@@ -1,0 +1,17 @@
+check:
+  pattern:
+    - configure.ac
+  suffixes:
+    - texi
+    - y
+ignore:
+  pattern:
+    - doc/HACKING
+    - doc/DCO
+    - doc/gpl.texi
+    - ChangeLog-2011
+    - configure
+    - m4/Makefile.in
+  suffixes:
+    - swp
+    - patch
