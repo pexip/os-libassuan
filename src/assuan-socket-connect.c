@@ -114,8 +114,12 @@ _assuan_connect_finalize (assuan_context_t ctx, assuan_fd_t fd,
   ctx->outbound.fd = fd;
   ctx->max_accepts = -1;
 
+#ifdef HAVE_W32_SYSTEM
+  ctx->engine.sendfd = w32_fdpass_send;
+#else
   if (flags & ASSUAN_SOCKET_CONNECT_FDPASSING)
     _assuan_init_uds_io (ctx);
+#endif
 
   /* initial handshake */
   {
@@ -126,7 +130,31 @@ _assuan_connect_finalize (assuan_context_t ctx, assuan_fd_t fd,
     if (err)
       TRACE1 (ctx, ASSUAN_LOG_SYSIO, "assuan_socket_connect", ctx,
 	      "can't connect to server: %s\n", gpg_strerror (err));
-    else if (response != ASSUAN_RESPONSE_OK)
+    else if (response == ASSUAN_RESPONSE_OK)
+      {
+#if defined(HAVE_W32_SYSTEM)
+        const char *line = ctx->inbound.line + off;
+        int process_id = -1;
+
+        /* Parse the message: OK ..., process %i */
+        line = strrchr (line, ',');
+        if (line)
+          {
+            line = strchr (line + 1, ' ');
+            if (line)
+              {
+                line = strchr (line + 1, ' ');
+                if (line)
+                  process_id = atoi (line + 1);
+              }
+          }
+        if (process_id != -1)
+          ctx->process_id = process_id;
+#else
+        ;
+#endif
+      }
+    else
       {
 	char *sname = _assuan_encode_c_string (ctx, ctx->inbound.line);
 	if (sname)
@@ -147,18 +175,18 @@ _assuan_connect_finalize (assuan_context_t ctx, assuan_fd_t fd,
  * and initialize the connection.
  */
 gpg_error_t
-assuan_socket_connect_fd (assuan_context_t ctx, int fd, unsigned int flags)
+assuan_socket_connect_fd (assuan_context_t ctx, assuan_fd_t fd,
+                          unsigned int flags)
 {
   gpg_error_t err;
-  assuan_fd_t afd;
 
-  if (!ctx || fd < 0)
+  if (!ctx)
     return GPG_ERR_INV_ARG;
-  afd = assuan_fd_from_posix_fd (fd);
-  if (afd == ASSUAN_INVALID_FD)
+  if (fd == ASSUAN_INVALID_FD)
     return GPG_ERR_INV_ARG;
 
-  err = _assuan_connect_finalize(ctx, afd, flags);
+  ctx->flags.is_socket = 1;
+  err = _assuan_connect_finalize (ctx, fd, flags);
 
   if (err)
     _assuan_reset (ctx);
@@ -323,6 +351,7 @@ assuan_socket_connect (assuan_context_t ctx, const char *name,
         return err;
     }
 
+  ctx->flags.is_socket = 1;
   fd = _assuan_sock_new (ctx, pf, SOCK_STREAM, 0);
   if (fd == ASSUAN_INVALID_FD)
     {

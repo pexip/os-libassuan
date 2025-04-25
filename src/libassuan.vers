@@ -21,7 +21,7 @@
 # Please remember to add new functions also to libassuan.def
 #-----------------------------------------------------------
 
-LIBASSUAN_1.0 {
+LIBASSUAN_2.0 {
   global:
     assuan_accept;
     assuan_begin_confidential;
@@ -105,6 +105,10 @@ LIBASSUAN_1.0 {
     assuan_sock_get_flag;
     assuan_sock_connect_byname;
     assuan_sock_set_system_hooks;
+    assuan_sock_accept;
+    assuan_pipe_wait_server_termination;
+    assuan_pipe_kill_server;
+    assuan_control;
 
     __assuan_close;
     __assuan_pipe;
