@@ -18,34 +18,38 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS_ENVIRONMENT =
+TESTS_ENVIRONMENT = EXEEXT=$(EXEEXT); export EXEEXT;
 
-EXTRA_DIST = motd ce-createpipe.c
+EXTRA_DIST = motd fdpassing-socket.sh
 
 BUILT_SOURCES =
 CLEANFILES =
 
-TESTS = version
-
-if HAVE_W32CE_SYSTEM
-w32cetools = ce-createpipe ce-server
-endif
+test_programs = version
+test_programs += pipeconnect
 
 if HAVE_W32_SYSTEM
+test_programs += fdpassing
+check_SCRIPTS = fdpassing-socket.sh
 testtools =
 else
-TESTS += pipeconnect
 testtools = socks5
 endif
 
 if USE_DESCRIPTOR_PASSING
-TESTS += fdpassing
+test_programs += fdpassing
+check_SCRIPTS = fdpassing-socket.sh
 endif
 
+TESTS = $(test_programs) $(check_SCRIPTS)
+
 AM_CFLAGS = $(GPG_ERROR_CFLAGS)
+if HAVE_W32_SYSTEM
+AM_LDFLAGS = -no-fast-install
+else
 AM_LDFLAGS = -no-install
+endif
 
 noinst_HEADERS = common.h
-noinst_PROGRAMS = $(TESTS) $(w32cetools) $(testtools)
-LDADD = ../src/libassuan.la $(GPG_ERROR_LIBS) \
-	@LDADD_FOR_TESTS_KLUDGE@
+noinst_PROGRAMS = $(test_programs) $(testtools)
+LDADD = ../src/libassuan.la $(GPG_ERROR_LIBS) @LDADD_FOR_TESTS_KLUDGE@

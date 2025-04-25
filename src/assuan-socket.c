@@ -29,9 +29,7 @@
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
 # include <wincrypt.h>
-#ifndef HAVE_W32CE_SYSTEM
 # include <io.h>
-#endif
 #else
 # include <sys/types.h>
 # include <sys/socket.h>
@@ -291,7 +289,7 @@ MyDeleteFile (LPCSTR lpFileName)
 
 
 int
-_assuan_sock_wsa2errno (int err)
+_assuan_sock_wsa2errno (assuan_context_t ctx, int err)
 {
   switch (err)
     {
@@ -308,6 +306,8 @@ _assuan_sock_wsa2errno (int err)
     default:
       return EIO;
     }
+
+  ctx->w32_error = err;
 }
 
 
@@ -365,7 +365,7 @@ read_port_and_nonce (const char *fname, unsigned short *port, char *nonce,
        *
        *   "!<socket >%u %c %08x-%08x-%08x-%08x\x00"
        *
-       * %d for port number, %c for kind of socket (s for STREAM), and
+       * %u for port number, %c for kind of socket (s for STREAM), and
        * we have 16-byte random bytes for nonce.  We only support
        * stream mode.
        */
@@ -531,7 +531,7 @@ _assuan_sock_new (assuan_context_t ctx, int domain, int type, int proto)
   assuan_fd_t res;
   if (domain == AF_UNIX || domain == AF_LOCAL)
     domain = AF_INET;
-  res = SOCKET2HANDLE(_assuan_socket (ctx, domain, type, proto));
+  res = _assuan_socket (ctx, domain, type, proto);
   return res;
 #else
   return _assuan_socket (ctx, domain, type, proto);
@@ -589,6 +589,27 @@ _assuan_sock_set_flag (assuan_context_t ctx, assuan_fd_t sockfd,
           return -1;
         }
     }
+  else if (!strcmp (name, "linger"))
+    {
+      struct linger li = { 0 };
+
+      if (value >= 0)
+        {
+          li.l_onoff = 1;
+          li.l_linger = value;
+        }
+
+      if (setsockopt (HANDLE2SOCKET(sockfd), SOL_SOCKET, SO_LINGER,
+                      (void *)&li, sizeof li))
+        return -1;
+    }
+  else if (!strcmp (name, "reuseaddr"))
+    {
+      int i = !!value;
+      if (setsockopt (HANDLE2SOCKET(sockfd), SOL_SOCKET, SO_REUSEADDR,
+                      (void *)&i, sizeof (i)))
+        return -1;
+    }
   else
     {
       gpg_err_set_errno (EINVAL);
@@ -622,6 +643,43 @@ _assuan_sock_get_flag (assuan_context_t ctx, assuan_fd_t sockfd,
     {
       *r_value = tor_mode == SOCKS_PORT;
     }
+  else if (!strcmp (name, "linger"))
+    {
+      struct linger li = { 0 };
+      socklen_t lilen = sizeof li;
+
+      if (getsockopt (HANDLE2SOCKET(sockfd), SOL_SOCKET, SO_LINGER,
+                      (void *)&li, &lilen))
+        return -1;
+      else if (lilen < sizeof li)
+        {
+          gpg_err_set_errno (EINVAL);
+          return -1;
+        }
+      if (li.l_onoff && li.l_linger >= 0)
+        *r_value = li.l_linger;
+      else
+        *r_value = -1;
+    }
+  else if (!strcmp (name, "reuseaddr"))
+    {
+      int i = 0;
+      socklen_t ilen = sizeof i;
+
+      if (getsockopt (HANDLE2SOCKET(sockfd), SOL_SOCKET, SO_REUSEADDR,
+                      (void *)&i, &ilen))
+        return -1;
+      else if (ilen < sizeof i)
+        {
+          gpg_err_set_errno (EINVAL);
+          return -1;
+        }
+      *r_value = !!i;
+    }
+#ifdef HAVE_W32_SYSTEM
+  else if (!strcmp (name, "w32_error"))
+    *r_value = ctx->w32_error;
+#endif
   else
     {
       gpg_err_set_errno (EINVAL);
@@ -694,7 +752,8 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
                 unsigned short socksport,
                 const char *credentials,
                 const char *hostname, unsigned short hostport,
-                struct sockaddr *addr, socklen_t length)
+                struct sockaddr *addr, socklen_t length,
+                int timeout)
 {
   int ret;
   /* struct sockaddr_in6 proxyaddr_in6; */
@@ -746,19 +805,13 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
   proxyaddr_in.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
   proxyaddr = (struct sockaddr *)&proxyaddr_in;
   proxyaddrlen = sizeof proxyaddr_in;
-  ret = _assuan_connect (ctx, HANDLE2SOCKET (sock), proxyaddr, proxyaddrlen);
+  ret = _assuan_connect (ctx, sock, proxyaddr, proxyaddrlen);
   if (ret && socksport == TOR_PORT && errno == ECONNREFUSED)
     {
       /* Standard Tor port failed - try the Tor browser port.  */
       proxyaddr_in.sin_port = htons (TOR_PORT2);
-      ret = _assuan_connect (ctx, HANDLE2SOCKET (sock),
-                             proxyaddr, proxyaddrlen);
+      ret = _assuan_connect (ctx, sock, proxyaddr, proxyaddrlen);
     }
-  /* If we get an EINPROGRESS here the caller is trying to do a
-   * non-blocking connect (e.g. for custom time out handling) which
-   * fails here.  The easiest fix would be to allow the client to tell
-   * us the timeout value and we do the timeout handling later on in the
-   * Socks protocol.  */
   if (ret)
     return ret;
   buffer[0] = 5; /* RFC-1928 VER field.  */
@@ -786,7 +839,9 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
      succeeding calls, this select should soon return successfully.
    */
   ret = select (HANDLE2SOCKET (sock)+1, &fds, NULL, NULL, &tv);
-  if (!ret)
+  if (ret < 0)
+    return ret;
+  else if (!ret)
     {
       gpg_err_set_errno (ETIMEDOUT);
       return -1;
@@ -890,6 +945,30 @@ socks5_connect (assuan_context_t ctx, assuan_fd_t sock,
   ret = do_writen (ctx, sock, buffer, buflen);
   if (ret)
     return ret;
+
+  if (timeout != 0)
+    {
+      if (timeout == -1)
+        {
+          tv.tv_sec = 0;
+          tv.tv_usec = 0;
+        }
+      else
+        {
+          /* TIMEOUT is in milisecond */
+          tv.tv_sec = timeout / 1000;
+          tv.tv_usec = (timeout % 1000) * 1000;
+        }
+      ret = select (HANDLE2SOCKET (sock)+1, &fds, NULL, NULL, &tv);
+      if (ret < 0)
+        return ret;
+      if (!ret)
+        {
+          gpg_err_set_errno (ETIMEDOUT);
+          return -1;
+        }
+    }
+
   ret = do_readn (ctx, sock, buffer, 10 /* Length for IPv4 */);
   if (ret)
     return ret;
@@ -990,9 +1069,33 @@ use_socks (struct sockaddr *addr)
 }
 
 
+static assuan_fd_t
+_assuan_sock_accept (assuan_context_t ctx, assuan_fd_t sockfd,
+                     struct sockaddr *addr, socklen_t *p_addrlen)
+{
+  assuan_fd_t res;
+
+  (void)ctx;
+
+  _assuan_pre_syscall ();
+
+#ifdef HAVE_W32_SYSTEM
+  res = SOCKET2HANDLE (accept (HANDLE2SOCKET (sockfd), addr, p_addrlen));
+  if (res == SOCKET2HANDLE (INVALID_SOCKET))
+    gpg_err_set_errno (_assuan_sock_wsa2errno (ctx, WSAGetLastError ()));
+#else
+  res = accept (sockfd, addr, p_addrlen);
+#endif
+
+  _assuan_post_syscall ();
+
+  return res;
+}
+
+
 int
 _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
-		      struct sockaddr *addr, int addrlen)
+		      struct sockaddr *addr, socklen_t addrlen)
 {
 #ifdef HAVE_W32_SYSTEM
   if (addr->sa_family == AF_LOCAL || addr->sa_family == AF_UNIX)
@@ -1017,7 +1120,7 @@ _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
       unaddr->sun_port = myaddr.sin_port;
       unaddr->sun_addr.s_addr = myaddr.sin_addr.s_addr;
 
-      ret = _assuan_connect (ctx, HANDLE2SOCKET(sockfd),
+      ret = _assuan_connect (ctx, sockfd,
 			    (struct sockaddr *)&myaddr, sizeof myaddr);
       if (!ret)
         {
@@ -1027,7 +1130,7 @@ _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
             {
               char buffer[16];
 
-              /* The client sends the nonce back - not useful.  We do
+              /* The server sends the nonce back - not useful.  We do
                  a dummy read.  */
               ret = do_readn (ctx, sockfd, buffer, 16);
               if (!ret)
@@ -1050,11 +1153,11 @@ _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
   else if (use_socks (addr))
     {
       return socks5_connect (ctx, sockfd, tor_mode,
-                             NULL, NULL, 0, addr, addrlen);
+                             NULL, NULL, 0, addr, addrlen, 0);
     }
   else
     {
-      return _assuan_connect (ctx, HANDLE2SOCKET (sockfd), addr, addrlen);
+      return _assuan_connect (ctx, sockfd, addr, addrlen);
     }
 #else
 # if HAVE_STAT
@@ -1093,7 +1196,7 @@ _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
   if (use_socks (addr))
     {
       return socks5_connect (ctx, sockfd, tor_mode,
-                             NULL, NULL, 0, addr, addrlen);
+                             NULL, NULL, 0, addr, addrlen, 0);
     }
   else
     {
@@ -1109,12 +1212,14 @@ _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
    returned; on error ASSUAN_INVALID_FD is returned and ERRNO set.  If
    CREDENTIALS is not NULL, it is a string used for password based
    authentication.  Username and password are separated by a colon.
-   RESERVED must be 0.  By passing HOST and PORT as 0 the function can
-   be used to check for proxy availability: If the proxy is available
-   a socket will be returned which the caller should then close.  */
+   TIMEOUT specifies connection timeout in miliseconds (0 means
+   default timeout, -1 means immediate timeout).  By passing HOST and
+   PORT as 0 the function can be used to check for proxy availability:
+   If the proxy is available a socket will be returned which the
+   caller should then close.  */
 assuan_fd_t
 _assuan_sock_connect_byname (assuan_context_t ctx, const char *host,
-                             unsigned short port, int reserved,
+                             unsigned short port, int timeout,
                              const char *credentials, unsigned int flags)
 {
   assuan_fd_t fd;
@@ -1146,7 +1251,8 @@ _assuan_sock_connect_byname (assuan_context_t ctx, const char *host,
      that we can't pass NULL directly as this indicates IP address
      mode to the called function.  */
   if (socks5_connect (ctx, fd, socksport,
-                      credentials, host? host:"", port, NULL, 0))
+                      credentials, host? host:"", port, NULL, 0,
+                      timeout))
     {
       int save_errno = errno;
       assuan_sock_close (fd);
@@ -1160,8 +1266,10 @@ _assuan_sock_connect_byname (assuan_context_t ctx, const char *host,
 
 int
 _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
-		   struct sockaddr *addr, int addrlen)
+		   struct sockaddr *addr, socklen_t addrlen)
 {
+  int res;
+
 #ifdef HAVE_W32_SYSTEM
   if (addr->sa_family == AF_LOCAL || addr->sa_family == AF_UNIX)
     {
@@ -1178,7 +1286,10 @@ _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
       DWORD nwritten;
 
       if (get_nonce (nonce.data, 16))
-        return -1;
+        {
+          res = -1;
+          goto leave;
+        }
 
       unaddr = (struct sockaddr_un *)addr;
 
@@ -1197,7 +1308,8 @@ _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
         {
           if (GetLastError () == ERROR_FILE_EXISTS)
             gpg_err_set_errno (EADDRINUSE);
-          return -1;
+          res = -1;
+          goto leave;
         }
 
       rc = bind (HANDLE2SOCKET (sockfd), (struct sockaddr *)&myaddr, len);
@@ -1206,11 +1318,12 @@ _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
                           (struct sockaddr *)&myaddr, &len);
       if (rc)
         {
-          int save_e = errno;
+          int save_e = _assuan_sock_wsa2errno (ctx, WSAGetLastError ());
           CloseHandle (filehd);
           MyDeleteFile (unaddr->sun_path);
           gpg_err_set_errno (save_e);
-          return rc;
+          res = rc;
+          goto leave;
         }
 
       if (is_cygwin_fd (sockfd))
@@ -1234,21 +1347,24 @@ _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
           CloseHandle (filehd);
           MyDeleteFile (unaddr->sun_path);
           gpg_err_set_errno (EIO);
-          return -1;
+          res = -1;
+          goto leave;
         }
       CloseHandle (filehd);
-      return 0;
+      res = 0;
     }
   else
     {
-      int res = bind (HANDLE2SOCKET(sockfd), addr, addrlen);
+      res = bind (HANDLE2SOCKET(sockfd), addr, addrlen);
       if (res < 0)
-	gpg_err_set_errno ( _assuan_sock_wsa2errno (WSAGetLastError ()));
-      return res;
+	gpg_err_set_errno ( _assuan_sock_wsa2errno (ctx, WSAGetLastError ()));
     }
+ leave:
 #else
-  return bind (sockfd, addr, addrlen);
+  res = bind (sockfd, addr, addrlen);
 #endif
+
+  return res;
 }
 
 
@@ -1317,7 +1433,7 @@ _assuan_sock_set_sockaddr_un (const char *fname, struct sockaddr *addr,
 
 int
 _assuan_sock_get_nonce (assuan_context_t ctx, struct sockaddr *addr,
-			int addrlen, assuan_sock_nonce_t *nonce)
+			socklen_t addrlen, assuan_sock_nonce_t *nonce)
 {
 #ifdef HAVE_W32_SYSTEM
   if (addr->sa_family == AF_LOCAL || addr->sa_family == AF_UNIX)
@@ -1392,6 +1508,8 @@ _assuan_sock_check_nonce (assuan_context_t ctx, assuan_fd_t fd,
          we ignore the values because they are not kernel controlled.  */
       if (do_readn (ctx, fd, buffer, 8))
         return -1;
+
+      memcpy (&ctx->process_id, buffer, 4);
       /* Send our credentials: We use the uid and gid we received but
          our own pid.  */
       n = getpid ();
@@ -1411,7 +1529,7 @@ _assuan_sock_check_nonce (assuan_context_t ctx, assuan_fd_t fd,
 /* Public API.  */
 
 gpg_error_t
-assuan_sock_init ()
+assuan_sock_init (void)
 {
   gpg_error_t err;
 #ifdef HAVE_W32_SYSTEM
@@ -1426,6 +1544,7 @@ assuan_sock_init ()
 #endif
 
   err = assuan_new (&sock_ctx);
+  sock_ctx->flags.is_socket = 1;
 
 #ifdef HAVE_W32_SYSTEM
   if (! err)
@@ -1437,7 +1556,7 @@ assuan_sock_init ()
 
 
 void
-assuan_sock_deinit ()
+assuan_sock_deinit (void)
 {
   if (sock_ctx == NULL)
     return;
@@ -1483,23 +1602,32 @@ assuan_sock_get_flag (assuan_fd_t sockfd, const char *name, int *r_value)
   return _assuan_sock_get_flag (sock_ctx, sockfd, name, r_value);
 }
 
+assuan_fd_t
+assuan_sock_accept (assuan_fd_t sockfd, struct sockaddr *addr,
+                    socklen_t *p_addrlen)
+{
+  return _assuan_sock_accept (sock_ctx, sockfd, addr, p_addrlen);
+}
+
 int
-assuan_sock_connect (assuan_fd_t sockfd, struct sockaddr *addr, int addrlen)
+assuan_sock_connect (assuan_fd_t sockfd, struct sockaddr *addr,
+                     socklen_t addrlen)
 {
   return _assuan_sock_connect (sock_ctx, sockfd, addr, addrlen);
 }
 
 assuan_fd_t
 assuan_sock_connect_byname (const char *host, unsigned short port,
-                            int reserved, const char *credentials,
+                            int timeout, const char *credentials,
                             unsigned int flags)
 {
   return _assuan_sock_connect_byname (sock_ctx,
-                                      host, port, reserved, credentials, flags);
+                                      host, port, timeout, credentials, flags);
 }
 
 int
-assuan_sock_bind (assuan_fd_t sockfd, struct sockaddr *addr, int addrlen)
+assuan_sock_bind (assuan_fd_t sockfd, struct sockaddr *addr,
+                  socklen_t addrlen)
 {
   return _assuan_sock_bind (sock_ctx, sockfd, addr, addrlen);
 }
@@ -1512,7 +1640,7 @@ assuan_sock_set_sockaddr_un (const char *fname, struct sockaddr *addr,
 }
 
 int
-assuan_sock_get_nonce (struct sockaddr *addr, int addrlen,
+assuan_sock_get_nonce (struct sockaddr *addr, socklen_t addrlen,
                        assuan_sock_nonce_t *nonce)
 {
   return _assuan_sock_get_nonce (sock_ctx, addr, addrlen, nonce);

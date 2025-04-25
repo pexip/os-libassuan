@@ -1,0 +1,3 @@
+! Files:.foreach_match(.*\.texi)  Copyright=~"s/\@copyright\{\}/Copyright/"
+# Add needed license
+! Copyright License:"GPL-2_with nonstandard_Autoconf-data_exception"

@@ -266,7 +266,7 @@ get_max_fds (void)
 
 
 int
-__assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
+__assuan_spawn (assuan_context_t ctx, assuan_pid_t *r_pid, const char *name,
 		const char **argv,
 		assuan_fd_t fd_in, assuan_fd_t fd_out,
 		assuan_fd_t *fd_child_list,
@@ -394,16 +394,17 @@ __assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
 
 /* FIXME: Add some sort of waitpid function that covers GPGME and
    gpg-agent's use of assuan.  */
-pid_t
-__assuan_waitpid (assuan_context_t ctx, pid_t pid, int nowait,
+assuan_pid_t
+__assuan_waitpid (assuan_context_t ctx, assuan_pid_t pid, int nowait,
 		  int *status, int options)
 {
+  if (nowait)
+    return 0;
+
   /* We can't just release the PID, a waitpid is mandatory.  But
      NOWAIT in POSIX systems just means the caller already did the
      waitpid for this child.  */
-  if (! nowait)
-    return waitpid (pid, NULL, 0);
-  return 0;
+  return waitpid (pid, status, options ? WNOHANG : 0);
 }
 
 
@@ -435,7 +436,7 @@ __assuan_connect (assuan_context_t ctx, int sock, struct sockaddr *addr,
 /* The default system hooks for assuan contexts.  */
 struct assuan_system_hooks _assuan_system_hooks =
   {
-    ASSUAN_SYSTEM_HOOKS_VERSION,
+    0,
     __assuan_usleep,
     __assuan_pipe,
     __assuan_close,

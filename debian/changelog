@@ -1,3 +1,48 @@
+libassuan (3.0.2-2) unstable; urgency=low
+
+  * Point vcs-* to debian/unstable
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 01 Mar 2025 13:25:12 +0100
+
+libassuan (3.0.2-1) experimental; urgency=medium
+
+  * New upstream version.
+  * Update patches for 3.0.2.
+    Drop superfluous patches, update
+    0002-avoid-self-describing-as-a-beta.patch to use same logic as the
+    respective patch used in gpgme.
+  * Update copyright info for new upstream version
+  * bump standards-version, no changes.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 23 Feb 2025 07:21:57 +0100
+
+libassuan (3.0.1-2) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Cherry-pick two post release-fixes from upstream GIT master.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 05 Sep 2024 19:13:52 +0200
+
+libassuan (3.0.1-1) experimental; urgency=low
+
+  * New upstream version.
+    + Adapt packaging to libassuan-config removal.
+    + Soname bumped, rename library package.
+    + Add helper files for using "cme update dpkg-copyright".
+  * Point gbp.conf and Vcs-* to experimental branch.
+  * Add README.source for documenting cme workflow.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 03 Aug 2024 13:37:13 +0200
+
+libassuan (2.5.6-1) unstable; urgency=medium
+
+  * New upstream release
+  * Standards-Version: bump to 4.6.2 (no changes needed)
+  * d/copyright: update years
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 15 Aug 2023 17:12:54 -0400
+
 libassuan (2.5.5-5+pexip24u3) pexip-bookworm; urgency=medium
 
   * New versioning scheme

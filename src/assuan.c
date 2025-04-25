@@ -36,6 +36,14 @@
 
 /* Global default state.  */
 
+/* Functions called before and after blocking syscalls.  */
+static void (*pre_syscall_func) (void);
+static void (*post_syscall_func) (void);
+
+/* Variable to see if functions above are initialized.  */
+static int _assuan_syscall_func_initialized;
+
+
 /* The default error source gor generated error codes.  */
 static gpg_err_source_t _assuan_default_err_source = GPG_ERR_SOURCE_USER_1;
 
@@ -106,6 +114,51 @@ assuan_set_system_hooks (assuan_system_hooks_t system_hooks)
 }
 
 
+gpg_error_t
+assuan_control (enum assuan_ctl_cmds cmd, void *arg)
+{
+  gpg_error_t err = 0;
+
+  (void)arg;
+  switch (cmd)
+    {
+    case ASSUAN_CONTROL_NOP:
+    default:
+      /* Nothing to do.  */
+      break;
+    case ASSUAN_CONTROL_REINIT_SYSCALL_CLAMP:
+      gpgrt_get_syscall_clamp (&pre_syscall_func, &post_syscall_func);
+      _assuan_syscall_func_initialized = 1;
+      break;
+    }
+
+  return err;
+}
+
+/* Used before blocking system calls.  */
+void
+_assuan_pre_syscall (void)
+{
+ again:
+  if (pre_syscall_func)
+    pre_syscall_func ();
+  else if (!_assuan_syscall_func_initialized)
+    {
+      gpgrt_get_syscall_clamp (&pre_syscall_func, &post_syscall_func);
+      _assuan_syscall_func_initialized = 1;
+      goto again;
+    }
+}
+
+
+/* Used after blocking system calls.  */
+void
+_assuan_post_syscall (void)
+{
+  if (post_syscall_func)
+    post_syscall_func ();
+}
+
 /* Create a new Assuan context.  The initial parameters are all needed
    in the creation of the context.  */
 gpg_error_t
@@ -146,6 +199,13 @@ assuan_new_ext (assuan_context_t *r_ctx, gpg_err_source_t err_source,
     ctx->inbound.fd = ASSUAN_INVALID_FD;
     ctx->outbound.fd = ASSUAN_INVALID_FD;
     ctx->listen_fd = ASSUAN_INVALID_FD;
+
+#if defined(HAVE_W32_SYSTEM)
+    ctx->process_id = -1;
+#else
+    ctx->pid = ASSUAN_INVALID_PID;
+#endif
+    ctx->server_proc = -1;
 
     *r_ctx = ctx;
 

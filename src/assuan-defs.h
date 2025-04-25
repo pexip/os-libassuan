@@ -76,6 +76,7 @@ struct assuan_context_s
 #ifdef HAVE_W32_SYSTEM
   /* The per-context w32 error string.  */
   char w32_strerror[256];
+  int w32_error;
 #endif
 
   /* The allocation hooks.  */
@@ -96,6 +97,15 @@ struct assuan_context_s
     unsigned int convey_comments : 1;
     unsigned int no_logging : 1;
     unsigned int force_close : 1;
+    /* From here, we have internal flags, not defined by assuan_flag_t.  */
+    unsigned int is_socket : 1;
+    unsigned int is_server : 1; /* Set if this is context belongs to a server */
+    unsigned int in_inquire : 1; /* Server: inside assuan_inquire */
+    unsigned int in_process_next : 1;
+    unsigned int process_complete : 1;
+    unsigned int in_command : 1;
+    unsigned int in_inq_cb : 1; /* Client: inquire callback is active */
+    unsigned int confidential_inquiry : 1; /* Client: inquiry is confidential */
   } flags;
 
   /* If set, this is called right before logging an I/O line.  */
@@ -134,12 +144,6 @@ struct assuan_context_s
   gpg_error_t err_no;
   const char *err_str;
 
-  int is_server;      /* Set if this is context belongs to a server */
-  int in_inquire;
-  int in_process_next;
-  int process_complete;
-  int in_command;
-
   /* The following members are used by assuan_inquire_ext.  */
   gpg_error_t (*inquire_cb) (void *cb_data, gpg_error_t rc,
 			     unsigned char *buf, size_t len);
@@ -176,7 +180,48 @@ struct assuan_context_s
 
   int max_accepts;  /* If we can not handle more than one connection,
 		       set this to 1, otherwise to -1.  */
-  pid_t pid;	  /* The pid of the peer. */
+
+  /*
+   * Process reference (PID on POSIX, Process Handle on Windows).
+   * Internal use, only valid for client with pipe.
+   */
+  assuan_pid_t server_proc;
+
+  /*
+   * NOTE: There are two different references for the process:
+   *
+   * (1) Process ID which is valid on a system.
+   * (2) Process handle which is private to the process that get it.
+   *
+   * POSIX system only has (1).
+   * Windows system has both of (1) and (2).
+   */
+
+#if defined(HAVE_W32_SYSTEM)
+  /*
+   * The process ID of the peer.
+   *
+   * client with pipe: Used internally for FD passing.
+   * client with socket: Used internally for FD passing.
+   *
+   * server with pipe: Not valid.
+   * server with socket: Valid for Cygwin Unix domain socket emulation.
+   *
+   */
+  int process_id;
+#else
+  /*
+   * The pid of the peer.
+   *
+   * client with pipe: Not valid.
+   * client with socket: Not valid.
+   *
+   * server with pipe: Valid (by env _assuan_pipe_connect_pid).
+   * server with socket: Valid on a system with SO_PEERCRED/etc.
+   *
+   */
+  pid_t pid;
+#endif
   assuan_fd_t listen_fd;  /* The fd we are listening on (used by
                              socket servers) */
   assuan_sock_nonce_t listen_nonce; /* Used with LISTEN_FD.  */
@@ -259,19 +304,20 @@ int _assuan_recvmsg (assuan_context_t ctx, assuan_fd_t fd,
 		     assuan_msghdr_t msg, int flags);
 int _assuan_sendmsg (assuan_context_t ctx, assuan_fd_t fd,
 		     assuan_msghdr_t msg, int flags);
-int _assuan_spawn (assuan_context_t ctx, pid_t *r_pid, const char *name,
+int _assuan_spawn (assuan_context_t ctx, assuan_pid_t *r_pid, const char *name,
 		   const char *argv[],
 		   assuan_fd_t fd_in, assuan_fd_t fd_out,
 		   assuan_fd_t *fd_child_list,
 		   void (*atfork) (void *opaque, int reserved),
 		   void *atforkvalue, unsigned int flags);
-pid_t  _assuan_waitpid (assuan_context_t ctx, pid_t pid, int nowait,
-			int *status, int options);
+assuan_pid_t _assuan_waitpid (assuan_context_t ctx, assuan_pid_t pid,
+                              int nowait, int *status, int options);
 int _assuan_socketpair (assuan_context_t ctx, int namespace, int style,
 			int protocol, assuan_fd_t filedes[2]);
-int _assuan_socket (assuan_context_t ctx, int namespace, int style, int protocol);
-int _assuan_connect (assuan_context_t ctx, int sock, struct sockaddr *addr,
-		     socklen_t length);
+assuan_fd_t _assuan_socket (assuan_context_t ctx, int namespace,
+                            int style, int protocol);
+int _assuan_connect (assuan_context_t ctx, assuan_fd_t sock,
+                     struct sockaddr *addr, socklen_t length);
 
 extern struct assuan_system_hooks _assuan_system_hooks;
 
@@ -323,6 +369,8 @@ int _assuan_error_is_eagain (assuan_context_t ctx, gpg_error_t err);
 
 #ifdef HAVE_W32_SYSTEM
 char *_assuan_w32_strerror (assuan_context_t ctx, int ec);
+gpg_error_t w32_fdpass_send (assuan_context_t ctx, assuan_fd_t fd);
+gpg_error_t w32_fdpass_recv (assuan_context_t ctx, assuan_fd_t *fd);
 #endif /*HAVE_W32_SYSTEM*/
 
 
@@ -344,18 +392,18 @@ ssize_t _assuan_simple_write (assuan_context_t ctx, const void *buffer,
 assuan_fd_t _assuan_sock_new (assuan_context_t ctx, int domain, int type,
 			      int proto);
 int _assuan_sock_connect (assuan_context_t ctx, assuan_fd_t sockfd,
-                          struct sockaddr *addr, int addrlen);
+                          struct sockaddr *addr, socklen_t addrlen);
 int _assuan_sock_bind (assuan_context_t ctx, assuan_fd_t sockfd,
-		       struct sockaddr *addr, int addrlen);
+		       struct sockaddr *addr, socklen_t addrlen);
 int _assuan_sock_set_sockaddr_un (const char *fname, struct sockaddr *addr,
                                   int *r_redirected);
 int _assuan_sock_get_nonce (assuan_context_t ctx, struct sockaddr *addr,
-			    int addrlen, assuan_sock_nonce_t *nonce);
+			    socklen_t addrlen, assuan_sock_nonce_t *nonce);
 int _assuan_sock_check_nonce (assuan_context_t ctx, assuan_fd_t fd,
 			      assuan_sock_nonce_t *nonce);
 #ifdef HAVE_W32_SYSTEM
 wchar_t *_assuan_utf8_to_wchar (const char *string);
-int _assuan_sock_wsa2errno (int err);
+int _assuan_sock_wsa2errno (assuan_context_t ctx, int err);
 #endif
 
 #ifdef HAVE_FOPENCOOKIE
@@ -371,15 +419,6 @@ FILE *_assuan_funopen(void *cookie,
 /*-- sysutils.c --*/
 const char *_assuan_sysutils_blurb (void);
 
-#ifdef HAVE_W32CE_SYSTEM
-
-#define getpid() GetCurrentProcessId ()
-char *_assuan_getenv (const char *name);
-#define getenv(a) _assuan_getenv ((a))
-
-#endif /*HAVE_W32CE_SYSTEM*/
-
-
 /* Prototypes for replacement functions.  */
 #ifndef HAVE_MEMRCHR
 void *memrchr (const void *block, int c, size_t size);
@@ -392,9 +431,6 @@ char *stpcpy (char *dest, const char *src);
 #define unsetenv _assuan_unsetenv
 #define clearenv _assuan_clearenv
 int setenv (const char *name, const char *value, int replace);
-#endif
-#ifndef HAVE_PUTC_UNLOCKED
-int putc_unlocked (int c, FILE *stream);
 #endif
 
 
@@ -411,7 +447,7 @@ int putc_unlocked (int c, FILE *stream);
 
 
 #if HAVE_W64_SYSTEM
-# define SOCKET2HANDLE(s) ((void *)(uintptr_t)(s))
+# define SOCKET2HANDLE(s) ((void *)(s))
 # define HANDLE2SOCKET(h) ((uintptr_t)(h))
 #elif HAVE_W32_SYSTEM
 # define SOCKET2HANDLE(s) ((void *)(s))
@@ -432,5 +468,7 @@ void _assuan_server_release (assuan_context_t ctx);
 /* Encode the C formatted string SRC and return the malloc'ed result.  */
 char *_assuan_encode_c_string (assuan_context_t ctx, const char *src);
 
+void _assuan_pre_syscall (void);
+void _assuan_post_syscall (void);
 
 #endif /*ASSUAN_DEFS_H*/

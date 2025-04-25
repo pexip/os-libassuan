@@ -29,9 +29,7 @@
 #endif
 #include <assert.h>
 #ifdef HAVE_W32_SYSTEM
-#ifndef HAVE_W32CE_SYSTEM
 # include <process.h>
-#endif
 #endif
 #include "assuan-defs.h"
 
@@ -499,9 +497,11 @@ assuan_send_data (assuan_context_t ctx, const void *buffer, size_t length)
   if (!buffer)
     { /* flush what we have */
       _assuan_cookie_write_flush (ctx);
+      if (ctx->flags.confidential)
+        wipememory (ctx->outbound.data.line, LINELENGTH);
       if (ctx->outbound.data.error)
         return ctx->outbound.data.error;
-      if (!ctx->is_server)
+      if (!ctx->flags.is_server)
         return assuan_write_line (ctx, length == 1? "CAN":"END");
     }
   else
@@ -520,10 +520,10 @@ assuan_sendfd (assuan_context_t ctx, assuan_fd_t fd)
   /* It is explicitly allowed to use (NULL, -1) as a runtime test to
      check whether descriptor passing is available. */
   if (!ctx && fd == ASSUAN_INVALID_FD)
-#ifdef USE_DESCRIPTOR_PASSING
+#if defined(USE_DESCRIPTOR_PASSING) || defined(HAVE_W32_SYSTEM)
     return 0;
 #else
-  return _assuan_error (ctx, GPG_ERR_NOT_IMPLEMENTED);
+    return _assuan_error (ctx, GPG_ERR_NOT_IMPLEMENTED);
 #endif
 
   if (!ctx)

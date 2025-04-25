@@ -6,20 +6,21 @@ XSBC-Pexip-Original-Maintainer: Debian GnuPG-Maintainers <pkg-gnupg-maint@lists.
 XSBC-Pexip-Original-Uploaders:
  Eric Dorland <eric@debian.org>,
  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
+ Andreas Metzler <ametzler@debian.org>,
 Build-Depends:
  debhelper-compat (= 13),
  libgpg-error-dev (>= 1.33),
 Build-Depends-Indep:
  libgpg-error-mingw-w64-dev,
  mingw-w64,
-Standards-Version: 4.6.1
-Vcs-Git: https://salsa.debian.org/debian/libassuan.git
-Vcs-Browser: https://salsa.debian.org/debian/libassuan
+Standards-Version: 4.7.2
+Vcs-Git: https://salsa.debian.org/debian/libassuan.git -b debian/unstable
+Vcs-Browser: https://salsa.debian.org/debian/libassuan/tree/debian/unstable
 Homepage: https://www.gnupg.org/related_software/libassuan/index.html
 Rules-Requires-Root: no
 XS-Pexip-Upstream: http://deb.debian.org/debian/ trixie
 
-Package: libassuan0
+Package: libassuan9
 Architecture: any
 Multi-Arch: same
 Pre-Depends:
@@ -36,7 +37,7 @@ Package: libassuan-dev
 Architecture: any
 Section: libdevel
 Depends:
- libassuan0 (= ${binary:Version}),
+ libassuan9 (= ${binary:Version}),
  libgpg-error-dev (>= 1.33),
  ${misc:Depends},
 Description: IPC library for the GnuPG components -- header files

@@ -48,10 +48,11 @@ _assuan_client_finish (assuan_context_t ctx)
       _assuan_close (ctx, ctx->outbound.fd);
       ctx->outbound.fd = ASSUAN_INVALID_FD;
     }
-  if (ctx->pid != ASSUAN_INVALID_PID && ctx->pid)
+  if (ctx->server_proc != -1)
     {
-      _assuan_waitpid (ctx, ctx->pid, ctx->flags.no_waitpid, NULL, 0);
-      ctx->pid = ASSUAN_INVALID_PID;
+      if (!ctx->flags.is_socket)
+	_assuan_waitpid (ctx, ctx->server_proc, ctx->flags.no_waitpid, NULL, 0);
+      ctx->server_proc = -1;
     }
 
   _assuan_uds_deinit (ctx);
@@ -275,6 +276,8 @@ assuan_transact (assuan_context_t ctx,
       else
         {
           rc = data_cb (data_cb_arg, line, linelen);
+          if (ctx->flags.confidential)
+            wipememory (ctx->inbound.line, LINELENGTH);
           if (!rc)
             goto again;
         }
@@ -289,6 +292,9 @@ assuan_transact (assuan_context_t ctx,
         }
       else
         {
+          ctx->flags.confidential_inquiry = 0;
+          ctx->flags.in_inq_cb = 1;
+
           rc = inquire_cb (inquire_cb_arg, line);
           if (!rc)
             rc = assuan_send_data (ctx, NULL, 0); /* flush and send END */
@@ -301,6 +307,13 @@ assuan_transact (assuan_context_t ctx,
               assuan_send_data (ctx, NULL, 1);
               _assuan_read_from_server (ctx, &response, &off, 0);
             }
+
+          if (ctx->flags.confidential_inquiry)
+            wipememory (ctx->outbound.data.line, LINELENGTH);
+
+          ctx->flags.confidential_inquiry = 0;
+          ctx->flags.in_inq_cb = 0;
+
           if (!rc)
             goto again;
         }
