@@ -1,3 +1,9 @@
+libassuan (3.0.2-2+pexip25u1) pexip-trixie; urgency=medium
+
+  * Initial trixie build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 29 Apr 2025 22:35:29 +0100
+
 libassuan (3.0.2-2) unstable; urgency=low
 
   * Point vcs-* to debian/unstable
